@@ -1,0 +1,43 @@
+1. Component Frontend principale
+client/src/components/CostAnalysisDashboard.tsx - Il componente React completo con tutte le funzionalità UI
+2. Routes Backend
+server/routes/costAnalysis.ts - Tutte le API per gestire costi fissi, variabili, break-even, fatturato manuale
+server/routes/costAnalysisReports.ts - Generazione report PDF
+3. Business Logic
+server/costAnalysis.ts - Funzioni di calcolo break-even e analisi profittabilità
+4. Schema Database
+Dalla sezione rilevante di shared/schema.ts:
+client/src/components/MonthlyCostManagement.tsx 
+// Tabelle necessarie:
+- fixedCosts
+- variableCosts
+- laborCosts
+- revenueSettings
+- manualRevenue
+- costNotes
+- breakEvenAnalysis
+5. Utility Components
+client/src/components/CostNoteField.tsx - Componente per le note sui costi
+client/src/hooks/use-cost-notes.ts - Hook per gestire le note
+Dipendenze Principali
+{
+  "frontend": [
+    "@tanstack/react-query",
+    "date-fns",
+    "lucide-react",
+    "recharts (opzionale per grafici)",
+    "shadcn/ui components (Card, Button, Input, Select, Dialog, etc.)"
+  ],
+  "backend": [
+    "drizzle-orm",
+    "express",
+    "puppeteer (per PDF)",
+    "postgres driver"
+  ]
+}
+Come Integrare
+Copia i file sopra elencati mantenendo la struttura
+Adatta lo schema database alle tue tabelle esistenti
+Configura le routes nel tuo router Express
+Importa i componenti UI e adattali al tuo design system
+Vuoi che ti generi un package completo con tutti questi file pro

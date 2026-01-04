@@ -1,0 +1,829 @@
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  /* Reduce motion and animations on mobile */
+  .mobile-reduced-motion * {
+    animation-duration: 0.3s !important;
+    transition-duration: 0.3s !important;
+  }
+  
+  /* Optimize scrolling performance */
+  .will-change-scroll {
+    will-change: scroll-position;
+    transform: translateZ(0);
+  }
+  
+  /* Reduce backdrop filter usage on mobile */
+  .mobile-backdrop-optimize {
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* Optimize hover states for touch devices */
+  @media (hover: none) {
+    .group:hover * {
+      transform: none !important;
+      scale: none !important;
+    }
+  }
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out;
+  }
+  
+  .mobile-button-scale {
+    @apply active:scale-95 transition-transform duration-150;
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(210, 40%, 6%);
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(210, 40%, 6%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(210, 40%, 6%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(210, 40%, 96%);
+  --secondary-foreground: hsl(222, 84%, 5%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(222, 84%, 5%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(217, 91%, 60%);
+  --radius: 0.5rem;
+  --chart-1: hsl(217, 91%, 60%);
+  --chart-2: hsl(160, 84%, 39%);
+  --chart-3: hsl(43, 96%, 56%);
+  --chart-4: hsl(271, 91%, 65%);
+  --chart-5: hsl(0, 84%, 60%);
+  
+  /* Custom financial app colors */
+  --trust-blue: hsl(217, 91%, 60%);
+  --growth-green: hsl(160, 84%, 39%);
+  --alert-red: hsl(0, 84%, 60%);
+  --soft-gray: hsl(210, 20%, 98%);
+  --medium-gray: hsl(215, 16%, 47%);
+  --dark-gray: hsl(222, 84%, 5%);
+}
+
+/* Custom color utilities */
+.text-trust-blue {
+  color: hsl(217, 91%, 60%);
+}
+
+.text-growth-green {
+  color: hsl(160, 84%, 39%);
+}
+
+.text-medium-gray {
+  color: hsl(215, 16%, 47%);
+}
+
+.text-dark-gray {
+  color: hsl(222, 84%, 5%);
+}
+
+.bg-trust-blue {
+  background-color: hsl(217, 91%, 60%);
+}
+
+.bg-growth-green {
+  background-color: hsl(160, 84%, 39%);
+}
+
+.bg-soft-gray {
+  background-color: hsl(210, 20%, 98%);
+}
+
+.bg-medium-gray {
+  background-color: hsl(215, 16%, 47%);
+}
+
+.bg-dark-gray {
+  background-color: hsl(222, 84%, 5%);
+}
+
+.border-trust-blue {
+  border-color: hsl(217, 91%, 60%);
+}
+
+/* Text shadow utilities for better readability */
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.text-shadow-lg {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced contrast backgrounds */
+.bg-overlay-dark {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
+}
+
+.bg-card-enhanced {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.dark {
+  --background: hsl(222, 84%, 5%);
+  --foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217, 33%, 17%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --popover: hsl(222, 84%, 5%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 5%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217, 33%, 17%);
+  --input: hsl(217, 33%, 17%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(222, 84%, 5%);
+  --secondary: hsl(217, 33%, 17%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(217, 33%, 17%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62%, 30%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(217, 91%, 60%);
+  --chart-1: hsl(217, 91%, 60%);
+  --chart-2: hsl(160, 84%, 39%);
+  --chart-3: hsl(43, 96%, 56%);
+  --chart-4: hsl(271, 91%, 65%);
+  --chart-5: hsl(0, 84%, 60%);
+  
+  /* Custom financial app colors - dark theme */
+  --trust-blue: hsl(217, 91%, 60%);
+  --growth-green: hsl(160, 84%, 39%);
+  --alert-red: hsl(0, 84%, 60%);
+  --soft-gray: hsl(222, 84%, 5%);
+  --medium-gray: hsl(215, 20%, 65%);
+  --dark-gray: hsl(210, 40%, 98%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for financial app colors */
+.bg-trust-blue {
+  background-color: hsl(217, 91%, 60%);
+}
+
+.text-trust-blue {
+  color: hsl(217, 91%, 60%);
+}
+
+.bg-growth-green {
+  background-color: hsl(160, 84%, 39%);
+}
+
+.text-growth-green {
+  color: hsl(160, 84%, 39%);
+}
+
+.bg-alert-red {
+  background-color: hsl(0, 84%, 60%);
+}
+
+.text-alert-red {
+  color: hsl(0, 84%, 60%);
+}
+
+.bg-soft-gray {
+  background-color: hsl(210, 20%, 98%);
+}
+
+.text-soft-gray {
+  color: hsl(210, 20%, 98%);
+}
+
+.bg-medium-gray {
+  background-color: hsl(215, 16%, 47%);
+}
+
+.text-medium-gray {
+  color: hsl(215, 16%, 47%);
+}
+
+.bg-dark-gray {
+  background-color: hsl(222, 84%, 5%);
+}
+
+.text-dark-gray {
+  color: hsl(222, 84%, 5%);
+}
+
+/* Dark mode overrides */
+.dark .bg-soft-gray {
+  background-color: hsl(222, 84%, 5%);
+}
+
+.dark .text-soft-gray {
+  color: hsl(222, 84%, 5%);
+}
+
+.dark .bg-dark-gray {
+  background-color: hsl(210, 40%, 98%);
+}
+
+.dark .text-dark-gray {
+  color: hsl(210, 40%, 98%);
+}
+
+.dark .text-medium-gray {
+  color: hsl(215, 20%, 65%);
+}
+
+/* Custom animations for dashboard */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.8s ease-out;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Mobile-first responsive design */
+@layer utilities {
+  /* Mobile optimizations */
+  .mobile-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Mobile touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Mobile button improvements */
+  @media (max-width: 768px) {
+    .touch-target {
+      min-height: 48px; /* Larger for better mobile UX */
+    }
+  }
+
+  /* Mobile card spacing */
+  .mobile-card-spacing {
+    @apply p-4 space-y-3;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-card-spacing {
+      @apply p-6 space-y-4;
+    }
+  }
+
+  /* Mobile grid layouts */
+  .mobile-grid {
+    @apply grid grid-cols-1 gap-4;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-grid {
+      @apply grid-cols-2 gap-6;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-grid {
+      @apply grid-cols-3;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .mobile-grid {
+      @apply grid-cols-4;
+    }
+  }
+
+  /* Mobile text scaling */
+  .mobile-text-scale {
+    @apply text-sm leading-relaxed;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-text-scale {
+      @apply text-base leading-normal;
+    }
+  }
+
+  /* Mobile button scaling */
+  .mobile-button-scale {
+    @apply px-4 py-2 text-sm;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-button-scale {
+      @apply px-6 py-3 text-base;
+    }
+  }
+
+  /* Mobile scrollable containers */
+  .mobile-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Text truncation utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Mobile community optimizations */
+  .community-post-mobile {
+    @apply border-l-4 border-l-transparent;
+  }
+
+  .community-post-mobile.question {
+    @apply border-l-red-500;
+  }
+
+  .community-post-mobile.advice {
+    @apply border-l-green-500;
+  }
+
+  .community-post-mobile.investment {
+    @apply border-l-blue-500;
+  }
+
+  /* Improved touch targets for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Mobile-optimized community layout */
+  .community-mobile-spacing {
+    @apply space-y-3;
+  }
+
+  @media (min-width: 640px) {
+    .community-mobile-spacing {
+      @apply space-y-4;
+    }
+  }
+
+  /* Mobile transaction optimizations */
+  .transaction-mobile-card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 hover:shadow-md transition-all duration-300;
+  }
+
+  .transaction-mobile-header {
+    @apply flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4;
+  }
+
+  .transaction-mobile-content {
+    @apply flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 min-w-0;
+  }
+
+  .transaction-mobile-tags {
+    @apply flex flex-wrap gap-1 sm:gap-2 text-xs;
+  }
+
+  .transaction-mobile-amount {
+    @apply text-right flex-shrink-0;
+  }
+
+  /* Mobile modal improvements */
+  @media (max-width: 640px) {
+    .mobile-modal {
+      @apply mx-4 my-8 max-h-[calc(100vh-4rem)] rounded-lg;
+    }
+  }
+
+  /* Responsive text truncation */
+  .mobile-truncate {
+    @apply truncate;
+  }
+
+  @media (max-width: 640px) {
+    .mobile-truncate {
+      @apply line-clamp-2;
+    }
+  }
+
+  /* Category expansion mobile optimization */
+  .category-mobile-header {
+    @apply flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 lg:p-8 gap-4 sm:gap-0;
+  }
+
+  .category-mobile-info {
+    @apply flex items-center space-x-3 md:space-x-5 flex-1 min-w-0;
+  }
+
+  .category-mobile-stats {
+    @apply flex items-center justify-between sm:justify-end space-x-3 md:space-x-4;
+  }
+
+  /* Chart responsive container */
+  .chart-container {
+    @apply w-full h-64;
+  }
+
+  @media (min-width: 768px) {
+    .chart-container {
+      @apply h-80;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .chart-container {
+      @apply h-96;
+    }
+  }
+
+  /* Mobile form improvements */
+  .mobile-form {
+    @apply space-y-4;
+  }
+
+  .mobile-form .form-field {
+    @apply w-full;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-form {
+      @apply space-y-6;
+    }
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    @apply flex items-center space-x-3 px-4 py-3 text-base font-medium;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-nav-item {
+      @apply px-3 py-2 text-sm;
+    }
+  }
+
+  /* Mobile-specific animations - Reduced for performance */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-slide-up,
+    .animate-float {
+      animation: none;
+    }
+  }
+
+  /* Mobile performance optimizations */
+  @media (max-width: 768px) {
+    /* Reduce expensive animations on mobile */
+    .animate-pulse {
+      animation: none;
+    }
+    
+    .animate-ping {
+      animation: none;
+    }
+    
+    /* Simplify transforms on mobile */
+    .hover\:scale-110:hover {
+      transform: none;
+    }
+    
+    .hover\:-translate-y-1:hover {
+      transform: none;
+    }
+    
+    /* Reduce shadow complexity on mobile */
+    .shadow-2xl {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .shadow-3xl {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Enable hardware acceleration for critical elements */
+    .transaction-mobile-card {
+      will-change: transform;
+      transform: translateZ(0);
+    }
+    
+    /* Optimize backdrop blur for mobile */
+    .backdrop-blur-sm {
+      backdrop-filter: none;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .backdrop-blur-lg {
+      backdrop-filter: none;
+      background: rgba(255, 255, 255, 0.95);
+    }
+  }
+
+  /* Mobile table responsiveness */
+  .mobile-table {
+    @apply block overflow-x-auto whitespace-nowrap;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-table {
+      @apply table overflow-x-visible whitespace-normal;
+    }
+  }
+
+  /* Mobile modal improvements */
+  @media (max-width: 767px) {
+    .mobile-modal {
+      @apply fixed inset-x-4 inset-y-8 max-h-[calc(100vh-4rem)] overflow-y-auto;
+    }
+  }
+
+  /* iOS Safari viewport fix */
+  .ios-viewport-fix {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+
+  /* Android Chrome viewport fix */
+  @supports (-webkit-touch-callout: none) {
+    .ios-viewport-fix {
+      height: -webkit-fill-available;
+    }
+  }
+
+  /* Module-specific mobile optimizations */
+  .module-header-mobile {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  .module-title-mobile {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+
+  .module-subtitle-mobile {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  .module-grid-mobile {
+    @apply grid gap-4 sm:gap-6 lg:gap-8;
+  }
+
+  .module-card-mobile {
+    @apply p-4 sm:p-6 rounded-lg sm:rounded-xl;
+  }
+
+  /* Financial cards responsive design */
+  .financial-card-mobile {
+    @apply bg-white rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-4 sm:p-6;
+  }
+
+  .financial-metric-mobile {
+    @apply text-lg sm:text-xl lg:text-2xl font-bold;
+  }
+
+  .financial-label-mobile {
+    @apply text-xs sm:text-sm text-gray-600;
+  }
+
+  /* Transaction item mobile layout */
+  .transaction-mobile {
+    @apply flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border-b border-gray-100 space-y-2 sm:space-y-0;
+  }
+
+  /* Investment card mobile layout */
+  .investment-card-mobile {
+    @apply bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300;
+  }
+
+  /* Button mobile scaling */
+  .btn-mobile-primary {
+    @apply px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg transition-all duration-200 touch-target;
+  }
+
+  .btn-mobile-secondary {
+    @apply px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 touch-target;
+  }
+
+  /* Chart container mobile responsive */
+  .chart-mobile-container {
+    @apply w-full h-48 sm:h-64 lg:h-80 bg-gray-50 rounded-lg p-2 sm:p-4;
+  }
+
+  /* Tab navigation mobile */
+  .tabs-mobile {
+    @apply flex overflow-x-auto scrollbar-hide space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-lg;
+  }
+
+  .tab-mobile {
+    @apply flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap;
+  }
+
+  /* Modal mobile responsive */
+  .modal-mobile {
+    @apply fixed inset-x-4 inset-y-8 sm:inset-x-auto sm:inset-y-auto sm:relative sm:max-w-lg sm:w-full sm:mx-auto max-h-[calc(100vh-4rem)] sm:max-h-none overflow-y-auto sm:overflow-visible;
+  }
+
+  /* Form mobile layout */
+  .form-mobile {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .form-group-mobile {
+    @apply space-y-2 sm:space-y-3;
+  }
+
+  .form-input-mobile {
+    @apply w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+
+  /* Stats grid mobile responsive */
+  .stats-grid-mobile {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .stat-card-mobile {
+    @apply bg-white p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-sm border border-gray-200;
+  }
+
+  /* Navigation improvements for mobile modules */
+  .module-nav-mobile {
+    @apply flex overflow-x-auto scrollbar-hide space-x-2 sm:space-x-4 pb-2 sm:pb-0;
+  }
+
+  .module-nav-item-mobile {
+    @apply flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors duration-200 touch-target;
+  }
+
+  /* Auth page improvements */
+  .auth-background-gradient {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 25%, #f0fdfa 50%, #ffffff 75%, #f8fafc 100%);
+  }
+
+  .auth-card-shadow {
+    box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.1), 0 0 0 1px rgba(16, 185, 129, 0.05);
+  }
+
+  .auth-input-focus {
+    @apply focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200;
+  }
+
+  .auth-button-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
+  }
+
+  .auth-button-gradient:hover {
+    background: linear-gradient(135deg, #059669 0%, #0f766e 100%);
+    box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+  }
+
+  /* Mobile-specific auth styles */
+  @media (max-width: 768px) {
+    .auth-mobile-header {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .auth-mobile-form {
+      padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+  }
+
+  /* Improved scrollbar hiding */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

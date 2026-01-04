@@ -1,0 +1,82 @@
+nel conto circolante, voglio poter andare ad inserire il previsionale delle spese mensili, prima di farlo Dammi TUTTE LE SPESE CHE POTREBBE AVERE UNA PERSONA MENSILMENTE e andiamo a creare una tabellina, ( non è obbligatorio che ci siano, è opzionale ma consigliato ) e dobbiamo poterlo visualizzare e configurare sia in fase di configurazione conti sia in fase di visualizzazione dei conti
+
+
+TUTTE LE SPESE MENSILI POSSIBILI
+🏠 CASA E ABITAZIONE
+
+Affitto/Mutuo
+Bollette (Luce, Gas, Acqua)
+Telefono fisso/Internet
+Condominio
+Riscaldamento/Climatizzazione
+Tassa rifiuti (TARI)
+Manutenzioni/Riparazioni casa
+🚗 TRASPORTI
+
+Benzina/Diesel/Elettrico
+Abbonamenti mezzi pubblici
+Assicurazione auto
+Bollo auto
+Parcheggi/ZTL
+Pedaggi autostradali
+Manutenzione/Revisione auto
+Car sharing/Taxi
+🍕 ALIMENTAZIONE
+
+Spesa alimentare (supermercato)
+Ristoranti/Pizzerie
+Bar/Caffè
+Mensa ufficio/scuola
+Delivery/Take away
+💊 SALUTE E BENESSERE
+
+Assicurazione sanitaria
+Farmaci/Parafarmaci
+Visite mediche private
+Dentista/Ortodonzia
+Palestra/Piscina/Sport
+Parrucchiere/Barbiere
+Estetista/Nail art
+Prodotti igiene personale
+👕 ABBIGLIAMENTO E CURA
+
+Vestiti
+Scarpe
+Intimo
+Accessori (borse, cinture, etc.)
+Lavanderia/Tintoria
+📱 TECNOLOGIA E COMUNICAZIONE
+
+Telefono cellulare
+Netflix/Prime/Disney+
+Spotify/Apple Music
+Software/App premium
+Cloud storage
+Gaming (PlayStation Plus, etc.)
+🎬 INTRATTENIMENTO E CULTURA
+
+Cinema/Teatro
+Concerti/Eventi
+Libri/Audiolibri
+Riviste/Giornali
+Hobby e passioni
+👶 FAMIGLIA E FIGLI
+
+Asilo nido/Scuola privata
+Baby sitter
+Pannolini/Prodotti neonato
+Attività sportive bambini
+Regali (compleanni, ricorrenze)
+💼 LAVORO E FORMAZIONE
+
+Corsi di formazione
+Libri professionali
+Trasporti per lavoro
+Abbigliamento professionale
+🎁 ALTRO
+
+Donazioni/Beneficenza
+Spese veterinario (animali)
+Spese impreviste (buffer)
+Accantonamento vacanze
+Accantonamento regali Natale
