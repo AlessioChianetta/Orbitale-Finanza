@@ -1293,7 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/transactions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = parseInt(req.user.id);
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10000;
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
       const transactions = await storage.getUserTransactions(userId, limit, startDate, endDate);
