@@ -90,14 +90,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getUserRecurringTransactions(userId),
       ]);
 
-      const totalAssets = assets.reduce((sum, asset) => sum + parseFloat(asset.value), 0);
-      const totalLiabilities = liabilities.reduce((sum, liability) => sum + parseFloat(liability.remainingAmount), 0);
+      const totalAssets = assets.reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0);
+      const totalLiabilities = liabilities.reduce((sum, liability) => sum + (parseFloat(liability.remainingAmount) || 0), 0);
 
       let transactionCashFlow = 0;
       let investmentFlow = 0;
 
       allTransactions.forEach(transaction => {
-        const amount = parseFloat(transaction.amount);
+        const amount = parseFloat(transaction.amount) || 0;
         if (transaction.type === 'income') {
           transactionCashFlow += amount;
         } else if (transaction.type === 'expense') {
@@ -114,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      const liquidityAssets = assets.filter(asset => asset.type === 'liquidity' || asset.type === 'liquidità').reduce((sum, asset) => sum + parseFloat(asset.value), 0);
+      const liquidityAssets = assets.filter(asset => asset.type === 'liquidity' || asset.type === 'liquidità').reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0);
       const availableLiquidity = liquidityAssets + transactionCashFlow;
       const netWorth = totalAssets - totalLiabilities;
 
@@ -123,14 +123,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let monthlyIncome, monthlyExpenses, monthlyCashFlow;
 
       if (budgetSettings && budgetSettings.monthlyIncome) {
-        monthlyIncome = parseFloat(budgetSettings.monthlyIncome);
-        const needsPercentage = parseFloat(budgetSettings.needsPercentage || '50') / 100;
-        const wantsPercentage = parseFloat(budgetSettings.wantsPercentage || '30') / 100;
+        monthlyIncome = parseFloat(budgetSettings.monthlyIncome) || 0;
+        const needsPercentage = (parseFloat(budgetSettings.needsPercentage || '50') || 50) / 100;
+        const wantsPercentage = (parseFloat(budgetSettings.wantsPercentage || '30') || 30) / 100;
         monthlyExpenses = monthlyIncome * (needsPercentage + wantsPercentage);
         monthlyCashFlow = monthlyIncome - monthlyExpenses;
       } else {
-        monthlyIncome = incomes.filter(i => i.isActive).reduce((sum, income) => sum + parseFloat(income.monthlyAmount), 0);
-        monthlyExpenses = expenses.filter(e => e.isActive).reduce((sum, expense) => sum + parseFloat(expense.monthlyAmount), 0);
+        monthlyIncome = incomes.filter(i => i.isActive).reduce((sum, income) => sum + (parseFloat(income.monthlyAmount) || 0), 0);
+        monthlyExpenses = expenses.filter(e => e.isActive).reduce((sum, expense) => sum + (parseFloat(expense.monthlyAmount) || 0), 0);
         monthlyCashFlow = monthlyIncome - monthlyExpenses;
       }
 
@@ -138,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalExpenses = monthlyExpenses;
 
       const assetsByType = assets.reduce((acc, asset) => {
-        acc[asset.type] = (acc[asset.type] || 0) + parseFloat(asset.value);
+        acc[asset.type] = (acc[asset.type] || 0) + (parseFloat(asset.value) || 0);
         return acc;
       }, {} as Record<string, number>);
 
@@ -474,15 +474,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
 
       // Calculate financial metrics including transaction flows
-      const totalAssets = assets.reduce((sum, asset) => sum + parseFloat(asset.value), 0);
-      const totalLiabilities = liabilities.reduce((sum, liability) => sum + parseFloat(liability.remainingAmount), 0);
+      const totalAssets = assets.reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0);
+      const totalLiabilities = liabilities.reduce((sum, liability) => sum + (parseFloat(liability.remainingAmount) || 0), 0);
 
-      // Calculate cash flow and investment flow separately
       let transactionCashFlow = 0;
       let investmentFlow = 0;
 
       allTransactions.forEach(transaction => {
-        const amount = parseFloat(transaction.amount);
+        const amount = parseFloat(transaction.amount) || 0;
         if (transaction.type === 'income') {
           transactionCashFlow += amount;
         } else if (transaction.type === 'expense') {
@@ -503,50 +502,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Available liquidity = cash assets from checkup + transaction cash flow
-      const liquidityAssets = assets.filter(asset => asset.type === 'liquidity' || asset.type === 'liquidità').reduce((sum, asset) => sum + parseFloat(asset.value), 0);
+      const liquidityAssets = assets.filter(asset => asset.type === 'liquidity' || asset.type === 'liquidità').reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0);
       const availableLiquidity = liquidityAssets + transactionCashFlow;
 
-      // Total net worth = only fixed assets from checkup - liabilities
-      // Investments from transactions are transfers from liquidity, not new wealth
       const netWorth = totalAssets - totalLiabilities;
 
-      // Get budget settings to check if user has configured budget
       const budgetSettings = await storage.getUserBudgetSettings(userId);
 
       let monthlyIncome, monthlyExpenses, monthlyCashFlow;
 
       if (budgetSettings && budgetSettings.monthlyIncome) {
-        // Use budget settings if available
-        monthlyIncome = parseFloat(budgetSettings.monthlyIncome);
-        // For now, calculate expenses from budget percentages since monthlyExpenses field doesn't exist yet
-        const needsPercentage = parseFloat(budgetSettings.needsPercentage || '50') / 100;
-        const wantsPercentage = parseFloat(budgetSettings.wantsPercentage || '30') / 100;
+        monthlyIncome = parseFloat(budgetSettings.monthlyIncome) || 0;
+        const needsPercentage = (parseFloat(budgetSettings.needsPercentage || '50') || 50) / 100;
+        const wantsPercentage = (parseFloat(budgetSettings.wantsPercentage || '30') || 30) / 100;
         monthlyExpenses = monthlyIncome * (needsPercentage + wantsPercentage);
         monthlyCashFlow = monthlyIncome - monthlyExpenses;
       } else {
-        // Fall back to check-up data
-        monthlyIncome = incomes.filter(i => i.isActive).reduce((sum, income) => sum + parseFloat(income.monthlyAmount), 0);
-        monthlyExpenses = expenses.filter(e => e.isActive).reduce((sum, expense) => sum + parseFloat(expense.monthlyAmount), 0);
+        monthlyIncome = incomes.filter(i => i.isActive).reduce((sum, income) => sum + (parseFloat(income.monthlyAmount) || 0), 0);
+        monthlyExpenses = expenses.filter(e => e.isActive).reduce((sum, expense) => sum + (parseFloat(expense.monthlyAmount) || 0), 0);
         monthlyCashFlow = monthlyIncome - monthlyExpenses;
       }
 
       const totalIncome = monthlyIncome;
       const totalExpenses = monthlyExpenses;
 
-      // Group assets by type for portfolio composition
       const assetsByType = assets.reduce((acc, asset) => {
-        acc[asset.type] = (acc[asset.type] || 0) + parseFloat(asset.value);
+        acc[asset.type] = (acc[asset.type] || 0) + (parseFloat(asset.value) || 0);
         return acc;
       }, {} as Record<string, number>);
 
-      // Create combined recent transactions including check-up data
       const checkupTransactions = [
-        // Assets as positive entries
         ...assets.map(asset => ({
           id: `asset-${asset.id}`,
           type: 'asset' as const,
           category: asset.type,
-          amount: parseFloat(asset.value),
+          amount: parseFloat(asset.value) || 0,
           description: `${asset.name} (Check-up)`,
           date: asset.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           createdAt: asset.createdAt?.toISOString() || new Date().toISOString(),
@@ -557,29 +547,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: `liability-${liability.id}`,
           type: 'liability' as const,
           category: liability.type,
-          amount: -parseFloat(liability.remainingAmount),
+          amount: -(parseFloat(liability.remainingAmount) || 0),
           description: `${liability.name} (Check-up)`,
           date: liability.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           createdAt: liability.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
-        // Active incomes as positive entries
         ...incomes.filter(income => income.isActive).map(income => ({
           id: `income-${income.id}`,
           type: 'income' as const,
           category: income.type,
-          amount: parseFloat(income.monthlyAmount),
+          amount: parseFloat(income.monthlyAmount) || 0,
           description: `${income.name} (Check-up - Mensile)`,
           date: income.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           createdAt: income.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
-        // Active expenses as negative entries
         ...expenses.filter(expense => expense.isActive).map(expense => ({
           id: `expense-${expense.id}`,
           type: 'expense' as const,
           category: expense.category,
-          amount: -parseFloat(expense.monthlyAmount),
+          amount: -(parseFloat(expense.monthlyAmount) || 0),
           description: `${expense.name} (Check-up - Mensile)`,
           date: expense.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           createdAt: expense.createdAt?.toISOString() || new Date().toISOString(),
@@ -762,29 +750,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         liabilities: liabilities.map(liability => ({
           name: liability.name,
           type: liability.type,
-          amount: parseFloat(liability.remainingAmount),
+          amount: parseFloat(liability.remainingAmount) || 0,
           interestRate: liability.interestRate,
           description: liability.description
         })),
         incomes: incomes.map(income => ({
           name: income.name,
           type: income.type,
-          amount: parseFloat(income.monthlyAmount),
+          amount: parseFloat(income.monthlyAmount) || 0,
           frequency: 'monthly',
           description: income.name
         })),
         expenses: expenses.map(expense => ({
           name: expense.name,
           category: expense.category,
-          amount: parseFloat(expense.monthlyAmount),
+          amount: parseFloat(expense.monthlyAmount) || 0,
           frequency: 'monthly',
           description: expense.name
         })),
         summary: {
-          totalAssets: assets.reduce((sum, asset) => sum + parseFloat(asset.value), 0),
-          totalLiabilities: liabilities.reduce((sum, liability) => sum + parseFloat(liability.remainingAmount), 0),
-          totalIncome: incomes.reduce((sum, income) => sum + parseFloat(income.monthlyAmount), 0),
-          totalExpenses: expenses.reduce((sum, expense) => sum + parseFloat(expense.monthlyAmount), 0)
+          totalAssets: assets.reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0),
+          totalLiabilities: liabilities.reduce((sum, liability) => sum + (parseFloat(liability.remainingAmount) || 0), 0),
+          totalIncome: incomes.reduce((sum, income) => sum + (parseFloat(income.monthlyAmount) || 0), 0),
+          totalExpenses: expenses.reduce((sum, expense) => sum + (parseFloat(expense.monthlyAmount) || 0), 0)
         }
       };
 

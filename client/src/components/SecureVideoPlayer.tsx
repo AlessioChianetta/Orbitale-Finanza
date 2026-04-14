@@ -56,7 +56,34 @@ export default function SecureVideoPlayer({ videoUrl, title, autoplay = false, l
     return () => clearTimeout(timer);
   }, [videoUrl]);
 
-  // YouTube Player with maximum privacy and no branding
+  useEffect(() => {
+    if (!lessonId) return;
+
+    const startTime = Date.now();
+    
+    return () => {
+      const sessionDuration = Math.floor((Date.now() - startTime) / 1000);
+      if (sessionDuration > 10) {
+        fetch('/api/video-progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            lessonId,
+            currentPosition: Math.min(sessionDuration, 1980),
+            totalDuration: 1980,
+            watchedSeconds: Math.min(sessionDuration, 1980),
+            completionPercentage: Math.min((sessionDuration / 1980) * 100, 100)
+          })
+        }).then(() => {
+          window.dispatchEvent(new CustomEvent('videoProgressUpdated', { 
+            detail: { lessonId } 
+          }));
+        }).catch(err => console.error('Error tracking session end:', err));
+      }
+    };
+  }, [lessonId]);
+
   const renderYouTubePlayer = () => {
     if (!videoId) return null;
     
@@ -68,7 +95,7 @@ export default function SecureVideoPlayer({ videoUrl, title, autoplay = false, l
       iv_load_policy: '3',
       cc_load_policy: '0',
       fs: '1',
-      enablejsapi: '1', // Enable JS API for progress tracking
+      enablejsapi: '1',
       origin: window.location.origin,
       playsinline: '1',
       showinfo: '0',
@@ -78,40 +105,6 @@ export default function SecureVideoPlayer({ videoUrl, title, autoplay = false, l
       playlist: videoId,
       wmode: 'opaque'
     });
-
-    // Session tracking - record when video is opened/closed
-    useEffect(() => {
-      if (!lessonId) return;
-
-      const startTime = Date.now();
-      console.log(`Video session started for lesson ${lessonId}`);
-      
-      return () => {
-        // Track session end
-        const sessionDuration = Math.floor((Date.now() - startTime) / 1000);
-        if (sessionDuration > 10) {
-          console.log(`Video session ended: ${sessionDuration} seconds`);
-          // Update progress based on session time
-          fetch('/api/video-progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              lessonId,
-              currentPosition: Math.min(sessionDuration, 1980),
-              totalDuration: 1980,
-              watchedSeconds: Math.min(sessionDuration, 1980),
-              completionPercentage: Math.min((sessionDuration / 1980) * 100, 100)
-            })
-          }).then(() => {
-            // Trigger progress update event
-            window.dispatchEvent(new CustomEvent('videoProgressUpdated', { 
-              detail: { lessonId } 
-            }));
-          }).catch(err => console.error('Error tracking session end:', err));
-        }
-      };
-    }, [lessonId]);
     
     return (
       <div className="relative w-full h-full">

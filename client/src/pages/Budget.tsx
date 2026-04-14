@@ -243,6 +243,77 @@ function getCategoryIcon(categoryKey: string, categoryName?: string): React.Comp
   return MoreHorizontal;
 }
 
+type CategoriesMap = Record<string, BudgetCategory | NormalizedCustomCategory>;
+
+function CategoryBreakdownItem({ spending, allCategories }: { spending: CategorySpending, allCategories: CategoriesMap }) {
+  const [showDetails, setShowDetails] = useState(false);
+  const IconComponent = categoryIcons[spending.category] || MoreHorizontal;
+  const categoryData = allCategories[spending.category];
+  const categoryColor = categoryData?.color || TRANSACTION_CATEGORY_COLORS[spending.category.toLowerCase()] || 'text-gray-600';
+  const budgetType = categoryData?.budgetType || 'wants';
+
+  return (
+    <div className="border rounded-lg">
+      <div 
+        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+        onClick={() => setShowDetails(!showDetails)}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${categoryColor} bg-opacity-10`}>
+            <IconComponent className={`w-5 h-5 ${categoryColor}`} />
+          </div>
+          <div>
+            <h3 className="font-medium">{spending.category}</h3>
+            <Badge variant={
+              budgetType === 'needs' ? 'destructive' : 
+              budgetType === 'wants' ? 'default' : 'secondary'
+            } className="text-xs mt-1">
+              {budgetType === 'needs' ? 'Bisogni' : 
+               budgetType === 'wants' ? 'Desideri' : 'Risparmi'}
+            </Badge>
+            {!categoryData && (
+              <Badge variant="outline" className="text-xs mt-1 ml-2">
+                Non mappata
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div className="text-right flex items-center space-x-2">
+          <div>
+            <p className="font-medium">{formatEuro(spending.amount)}</p>
+          </div>
+          <span className={`transition-transform ${showDetails ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </div>
+      </div>
+
+      {showDetails && (
+        <div className="border-t bg-gray-50 p-3">
+          <div className="space-y-2">
+            {spending.transactions.map((transaction, txIndex) => (
+              <div key={txIndex} className="flex justify-between items-center text-sm">
+                <div>
+                  <p className="font-medium">{transaction.description || 'Transazione'}</p>
+                  <p className="text-gray-500">
+                    {new Date(transaction.date).toLocaleDateString('it-IT')} • {transaction.type === 'expense' ? 'Spesa' : transaction.type === 'investment' ? 'Investimento' : 'Entrata'}
+                  </p>
+                </div>
+                <span className={`font-medium ${
+                  transaction.type === 'expense' ? 'text-red-600' : 
+                  transaction.type === 'investment' ? 'text-blue-600' : 'text-green-600'
+                }`}>
+                  {transaction.type === 'expense' ? '-' : '+'}{formatEuro(Math.abs(transaction.amount))}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BudgetVisualization({ spendingData, budgetSettings, allCategories }: { 
   spendingData: CategorySpending[], 
   budgetSettings: BudgetSettings,
@@ -370,90 +441,25 @@ function BudgetVisualization({ spendingData, budgetSettings, allCategories }: {
         </CardContent>
       </Card>
 
-      {/* Category Breakdown */}
       <Card>
         <CardHeader>
           <CardTitle>Dettaglio per Categoria</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {spendingData.map((spending, index) => {
-              const IconComponent = categoryIcons[spending.category] || MoreHorizontal;
-              const [showDetails, setShowDetails] = useState(false);
-              const categoryData = allCategories[spending.category];
-              const categoryColor = categoryData?.color || TRANSACTION_CATEGORY_COLORS[spending.category.toLowerCase()] || 'text-gray-600';
-              const budgetType = categoryData?.budgetType || 'wants'; // Default to 'wants' if not specified or mapped
-
-              return (
-                <div key={index} className="border rounded-lg">
-                  <div 
-                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
-                    onClick={() => setShowDetails(!showDetails)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${categoryColor} bg-opacity-10`}>
-                        <IconComponent className={`w-5 h-5 ${categoryColor}`} />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{spending.category}</h3>
-                        <Badge variant={
-                          budgetType === 'needs' ? 'destructive' : 
-                          budgetType === 'wants' ? 'default' : 'secondary'
-                        } className="text-xs mt-1">
-                          {budgetType === 'needs' ? 'Bisogni' : 
-                           budgetType === 'wants' ? 'Desideri' : 'Risparmi'}
-                        </Badge>
-                        {!categoryData && (
-                          <Badge variant="outline" className="text-xs mt-1 ml-2">
-                            Non mappata
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right flex items-center space-x-2">
-                      <div>
-                        <p className="font-medium">{formatEuro(spending.amount)}</p>
-                      </div>
-                      <span className={`transition-transform ${showDetails ? 'rotate-180' : ''}`}>
-                        ▼
-                      </span>
-                    </div>
-                  </div>
-
-                  {showDetails && (
-                    <div className="border-t bg-gray-50 p-3">
-                      <div className="space-y-2">
-                        {spending.transactions.map((transaction, txIndex) => (
-                          <div key={txIndex} className="flex justify-between items-center text-sm">
-                            <div>
-                              <p className="font-medium">{transaction.description || 'Transazione'}</p>
-                              <p className="text-gray-500">
-                                {new Date(transaction.date).toLocaleDateString('it-IT')} • {transaction.type === 'expense' ? 'Spesa' : transaction.type === 'investment' ? 'Investimento' : 'Entrata'}
-                              </p>
-                            </div>
-                            <span className={`font-medium ${
-                              transaction.type === 'expense' ? 'text-red-600' : 
-                              transaction.type === 'investment' ? 'text-blue-600' : 'text-green-600'
-                            }`}>
-                              {transaction.type === 'expense' ? '-' : '+'}{formatEuro(Math.abs(transaction.amount))}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {spendingData.map((spending, index) => (
+              <CategoryBreakdownItem
+                key={index}
+                spending={spending}
+                allCategories={allCategories}
+              />
+            ))}
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-// Type definition for categories map (using the centralized type)
-type CategoriesMap = Record<string, BudgetCategory | NormalizedCustomCategory>;
 
 function CategoryBudgetManager({ 
   allCategories, 

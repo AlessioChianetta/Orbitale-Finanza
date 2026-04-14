@@ -74,18 +74,15 @@ export async function getFixedCostsForPeriod(
     // Calcola proporzione in base al periodo
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+
     if (daysDiff <= 1) {
-      // Periodo giornaliero
-      return monthlyFixedCosts / 30;
+      return monthlyFixedCosts / daysInMonth;
     } else if (daysDiff >= 28 && daysDiff <= 31) {
-      // Periodo mensile completo - restituisce l'intero importo mensile configurato
       return monthlyFixedCosts;
     } else if (daysDiff < 28) {
-      // Periodo parziale del mese
-      return monthlyFixedCosts * (daysDiff / 30);
+      return monthlyFixedCosts * (daysDiff / daysInMonth);
     } else {
-      // Per periodi lunghi (annuali), restituisce solo il costo mensile
-      // Il chiamante dovrà gestire l'aggregazione per tutti i mesi
       return monthlyFixedCosts;
     }
   } catch (error) {
@@ -169,18 +166,15 @@ export async function getVariableCostsForOrders(
     // Calcola proporzione in base al periodo
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+
     if (daysDiff <= 1) {
-      // Periodo giornaliero
-      return totalVariableCosts / 30;
+      return totalVariableCosts / daysInMonth;
     } else if (daysDiff >= 28 && daysDiff <= 31) {
-      // Periodo mensile completo - restituisce l'intero importo mensile configurato
       return totalVariableCosts;
     } else if (daysDiff < 28) {
-      // Periodo parziale del mese
-      return totalVariableCosts * (daysDiff / 30);
+      return totalVariableCosts * (daysDiff / daysInMonth);
     } else {
-      // Per periodi lunghi (annuali), restituisce solo il costo mensile
-      // Il chiamante dovrà gestire l'aggregazione per tutti i mesi
       return totalVariableCosts;
     }
   } catch (error) {
@@ -441,16 +435,7 @@ export async function saveBreakEvenAnalysis(
 import express from 'express';
 const router = express.Router();
 
-// Middleware per autenticazione (assumendo sia già configurato)
-const requireAuth = (req, res, next) => {
-  // Implementazione placeholder per l'autenticazione
-  if (req.headers.authorization === 'Bearer valid_token') {
-    req.user = { id: 1 }; // Utente di esempio
-    next();
-  } else {
-    res.status(401).json({ error: 'Non autorizzato' });
-  }
-};
+import { isAuthenticated as requireAuth } from '../auth.js';
 
 // POST /api/cost-analysis/save-configuration - Salva configurazione completa (con supporto per mese)
 router.post('/save-configuration', requireAuth, async (req, res) => {

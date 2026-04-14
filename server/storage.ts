@@ -325,11 +325,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(userId: number, userData: Partial<UpsertUser>): Promise<User> {
-    console.log('[STORAGE updateUser] ===== INIZIO UPDATE USER =====');
-    console.log('[STORAGE updateUser] userId:', userId);
-    console.log('[STORAGE updateUser] userData ricevuto:', userData);
-
-    // Map website_url from snake_case to camelCase if present in userData
     if (userData.website_url !== undefined) {
       userData.websiteUrl = userData.website_url;
       delete userData.website_url;
@@ -341,21 +336,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
 
-    console.log('[STORAGE updateUser] Query eseguita - UPDATE users SET:', {
-      ...userData,
-      updatedAt: new Date()
-    });
-    console.log('[STORAGE updateUser] WHERE id =', userId);
-    console.log('[STORAGE updateUser] Risultato dal DB (updatedUser):', {
-      id: updatedUser?.id,
-      email: updatedUser?.email,
-      firstName: updatedUser?.firstName,
-      lastName: updatedUser?.lastName,
-      websiteUrl: updatedUser?.websiteUrl,
-      role: updatedUser?.role,
-      updatedAt: updatedUser?.updatedAt
-    });
-    console.log('[STORAGE updateUser] ===== FINE UPDATE USER =====');
+    if (!updatedUser) {
+      throw new Error(`User with id ${userId} not found`);
+    }
 
     return updatedUser;
   }
@@ -376,6 +359,9 @@ export class DatabaseStorage implements IStorage {
       .set({ ...asset, updatedAt: new Date() })
       .where(eq(assets.id, id))
       .returning();
+    if (!updatedAsset) {
+      throw new Error(`Asset with id ${id} not found`);
+    }
     return updatedAsset;
   }
 
