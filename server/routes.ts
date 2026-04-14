@@ -4,6 +4,14 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, requireAdmin, requireConsultant, isAdmin, isConsultant, requireMasterApiKey } from "./auth";
 import { db } from "./db";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
+
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 import {
   insertAssetSchema,
   insertLiabilitySchema,
@@ -538,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: asset.type,
           amount: parseFloat(asset.value) || 0,
           description: `${asset.name} (Check-up)`,
-          date: asset.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          date: asset.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
           createdAt: asset.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
@@ -549,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: liability.type,
           amount: -(parseFloat(liability.remainingAmount) || 0),
           description: `${liability.name} (Check-up)`,
-          date: liability.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          date: liability.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
           createdAt: liability.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
@@ -559,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: income.type,
           amount: parseFloat(income.monthlyAmount) || 0,
           description: `${income.name} (Check-up - Mensile)`,
-          date: income.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          date: income.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
           createdAt: income.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
@@ -569,7 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: expense.category,
           amount: -(parseFloat(expense.monthlyAmount) || 0),
           description: `${expense.name} (Check-up - Mensile)`,
-          date: expense.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          date: expense.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
           createdAt: expense.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         }))
@@ -1026,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             amount: currentAmountNum.toString(),
             category: 'Obiettivi',
             description: `Investimento iniziale per obiettivo: ${goalData.name}`,
-            date: new Date().toISOString().split('T')[0],
+            date: getLocalDateString(),
             goalId: goal.id
           };
           console.log('Transaction data to create:', JSON.stringify(transactionData, null, 2));
@@ -1173,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'goal_transfer',
               amount: currentAmount.toString(),
               description: `Trasferimento da "${existingGoal.name}" a "${targetGoal.name}"`,
-              date: new Date().toISOString().split('T')[0],
+              date: getLocalDateString(),
               category: 'trasferimento-obiettivo',
               goalId: targetGoalId
             });
@@ -1190,7 +1198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'income',
               amount: currentAmount.toString(),
               description: `Rimborso da obiettivo "${existingGoal.name}"`,
-              date: new Date().toISOString().split('T')[0],
+              date: getLocalDateString(),
               category: 'rimborso-obiettivo',
               goalId: goalId,
               accountType: targetAccountId
@@ -1254,7 +1262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'investment',
               amount: currentAmount.toString(),
               description: `Conversione da obiettivo "${existingGoal.name}" a investimento generico`,
-              date: new Date().toISOString().split('T')[0],
+              date: getLocalDateString(),
               category: 'portfolio-diversificato'
             });
             break;
@@ -2582,7 +2590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalValue: totalValue,
           totalReturn: totalReturn,
           returnPercentage: returnPercentage,
-          purchaseDate: inv.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          purchaseDate: inv.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
           instrumentType: instrumentType,
           goalId: inv.goalId
         };
@@ -2684,7 +2692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'investment',
           description: `Investimento in ${name}`,
           amount: totalAmount.toString(),
-          date: purchaseDate || new Date().toISOString().split('T')[0],
+          date: purchaseDate || getLocalDateString(),
           category: 'Investimenti',
           accountType: sourceAccount,
           goalId: goalId || null,
@@ -2701,7 +2709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'investment' as const,
         description: `Acquisto ${shares} ${instrumentType === 'crypto' ? 'unità' : 'azioni'} di ${name}`,
         amount: totalAmount.toString(),
-        date: purchaseDate || new Date().toISOString().split('T')[0],
+        date: purchaseDate || getLocalDateString(),
         category: 'investimenti',
         goalId: goalId || null,
         investmentId: investment.id,
@@ -2751,7 +2759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalReturn: (parseFloat(investment.quantity || '0') * parseFloat(investment.currentPrice || investment.averagePrice || '0')) - (parseFloat(investment.quantity || '0') * parseFloat(investment.averagePrice || '0')),
         returnPercentage: parseFloat(investment.averagePrice || '0') > 0 ? 
           (((parseFloat(investment.currentPrice || '0') - parseFloat(investment.averagePrice || '0')) / parseFloat(investment.averagePrice || '0')) * 100) : 0,
-        purchaseDate: investment.createdAt?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+        purchaseDate: investment.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
         instrumentType: instrumentType || 'stock',
         goalId: investment.goalId
       };
@@ -2902,7 +2910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'income',
             amount: totalValue.toString(),
             description: `Vendita investimento: ${investment.name}`,
-            date: new Date().toISOString().split('T')[0],
+            date: getLocalDateString(),
             category: 'Investimenti',
             accountType: targetAccount
           });
@@ -3579,7 +3587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: 'Trasferimenti',
           budgetCategory: 'needs',
           description: description || `Trasferimento da ${fromAccount} a ${toAccount}`,
-          date: new Date().toISOString().split('T')[0],
+          date: getLocalDateString(),
           accountType: fromAccount
         });
 
@@ -3590,7 +3598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: 'Trasferimenti', 
           budgetCategory: 'needs',
           description: description || `Ricevuto da ${fromAccount}`,
-          date: new Date().toISOString().split('T')[0],
+          date: getLocalDateString(),
           accountType: toAccount
         });
 
@@ -3645,7 +3653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         category: 'Trasferimenti',
         budgetCategory: 'needs',
         description: description || `Trasferimento da ${fromAccount} a ${toAccount}`,
-        date: new Date().toISOString().split('T')[0],
+        date: getLocalDateString(),
         accountType: fromAccount
       });
 
@@ -3656,7 +3664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         category: 'Trasferimenti', 
         budgetCategory: 'needs',
         description: description || `Ricevuto da ${fromAccount}`,
-        date: new Date().toISOString().split('T')[0],
+        date: getLocalDateString(),
         accountType: toAccount
       });
 

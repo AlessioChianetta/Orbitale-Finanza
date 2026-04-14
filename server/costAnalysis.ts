@@ -316,23 +316,9 @@ router.post('/save-configuration', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { fixedCosts: fixedCostsData, laborSettings, advancedCosts, debts, salesConversionData, unitVariableCosts, month } = req.body;
-    const monthKey = month || 'default'; // Usa il mese dal body o default
+    const monthKey = month || 'default';
 
-    console.log('📥 [STEP 1 - BACKEND] === RICHIESTA RICEVUTA ===');
-    console.log('📥 [STEP 1] Owner ID:', userId);
-    console.log('📥 [STEP 1] monthKey:', monthKey);
-    console.log('📥 [STEP 1] Request body completo:', JSON.stringify(req.body, null, 2));
-    
-    console.log('📥 [STEP 2 - BACKEND] === DATI ESTRATTI ===');
-    console.log('📥 [STEP 2] Fixed Costs:', fixedCostsData);
-    console.log('📥 [STEP 2] Labor Settings:', laborSettings);
-    console.log('📥 [STEP 2] Advanced Costs:', advancedCosts);
-    console.log('📥 [STEP 2] Debts:', debts);
-    console.log('📥 [STEP 2] Sales Conversion Data:', salesConversionData);
-    console.log('📥 [STEP 2] Unit Variable Costs:', unitVariableCosts);
-
-    // Salva o aggiorna i costi fissi
-    const fixedCostMapping = {
+    const fixedCostMapping: Record<string, string> = {
       rent: 'rent',
       utilities: 'utilities', 
       insurance: 'insurance',
@@ -341,532 +327,188 @@ router.post('/save-configuration', requireAuth, async (req, res) => {
       other: 'other'
     };
 
-    console.log('=== SALVATAGGIO COSTI FISSI ===');
-    // Salva costi fissi nella tabella fixed_costs
-    // Supporta sia array che oggetto
-    const costsToSave = Array.isArray(fixedCostsData) ? fixedCostsData : 
-                        fixedCostsData ? Object.entries(fixedCostsData).map(([name, monthlyAmount]) => ({ name, monthlyAmount })) : [];
-    
-    for (const cost of costsToSave) {
-      const category = (fixedCostMapping as any)[cost.name] || 'other';
-      console.log(`Processando costo fisso: ${cost.name} = ${cost.monthlyAmount} (categoria: ${category})`);
+    const { salesConversionData: salesConversionTable, unitVariableCosts: unitVariableCostsTable } = await import('../shared/schema.js');
 
-      try {
-          console.log(`🔍 [STEP 1] Cerco record esistente per owner=${userId}, name="${cost.name}", monthKey SPECIFICO="${monthKey}"`);
+    await db.transaction(async (tx) => {
+      // === FIXED COSTS ===
+      const costsToSave = Array.isArray(fixedCostsData) ? fixedCostsData : 
+                          fixedCostsData ? Object.entries(fixedCostsData).map(([name, monthlyAmount]) => ({ name, monthlyAmount })) : [];
+      
+      for (const cost of costsToSave) {
+        const category = fixedCostMapping[cost.name] || 'other';
+        const existingRecord = await tx
+          .select({ id: fixedCosts.id })
+          .from(fixedCosts)
+          .where(and(eq(fixedCosts.userId, userId), eq(fixedCosts.name, cost.name), eq(fixedCosts.monthKey, monthKey)))
+          .limit(1);
 
-          // Cerca se esiste un record per questo owner, nome E mese specifico
-          const existingRecord = await db
-            .select({ id: fixedCosts.id, monthKey: fixedCosts.monthKey })
-            .from(fixedCosts)
-            .where(and(
-              eq(fixedCosts.userId, userId),
-              eq(fixedCosts.name, cost.name),
-              eq(fixedCosts.monthKey, monthKey)
-            ))
-            .limit(1);
+        if (existingRecord.length > 0) {
+          await tx.update(fixedCosts).set({ monthlyAmount: String(cost.monthlyAmount), updatedAt: new Date(), isActive: true }).where(eq(fixedCosts.id, existingRecord[0].id));
+        } else {
+          await tx.insert(fixedCosts).values({ userId, name: cost.name, description: `Costo fisso: ${cost.name}`, category, monthlyAmount: String(cost.monthlyAmount), monthKey, startDate: new Date(), isActive: true });
+        }
+      }
 
-          console.log(`🔍 [STEP 2] Record trovati per ${monthKey}: ${existingRecord.length}`);
-          if (existingRecord.length > 0) {
-            console.log(`🔍 [STEP 3] Record esistente per ${monthKey} - ID=${existingRecord[0].id}, aggiorno valore`);
-
-            // Record esistente trovato per questo mese specifico, aggiorna solo il valore
-            await db
-              .update(fixedCosts)
-              .set({
-                monthlyAmount: String(cost.monthlyAmount),
-                updatedAt: new Date(),
-                isActive: true
-              })
-              .where(eq(fixedCosts.id, existingRecord[0].id));
-
-            console.log(`✅ Costo fisso aggiornato per mese ${monthKey}: ${cost.name} = ${cost.monthlyAmount}`);
-          } else {
-            console.log(`🆕 [CREAZIONE] Nessun record per ${monthKey} - creo nuovo record per ${cost.name}`);
-
-              // Crea nuovo record
-              await db
-                .insert(fixedCosts)
-                .values({
-                  userId,
-                  name: cost.name,
-                  description: `Costo fisso: ${cost.name}`,
-                  category,
-                  monthlyAmount: String(cost.monthlyAmount),
-                  monthKey: monthKey,
-                  startDate: new Date(),
-                  isActive: true
-                });
-              console.log(`✅ Costo fisso creato per ${monthKey}: ${cost.name} = ${cost.monthlyAmount}`);
-            }
-          } catch (error: any) {
-            console.error(`❌ ERRORE salvando costo fisso ${cost.name}:`, error);
-            console.error('Stack trace:', error.stack);
-          }
-    }
-    console.log('=== FINE SALVATAGGIO COSTI FISSI ===')
-
-    console.log('=== SALVATAGGIO COSTI LAVORO ===');
-    // Salva le impostazioni del lavoro come costi del lavoro
-    const today = new Date();
-    const monthlyLaborCost = laborSettings.averageHourlyWage * laborSettings.hoursPerDay * laborSettings.daysPerMonth;
-
-    console.log('Calcolando costi lavoro:', {
-      averageHourlyWage: laborSettings.averageHourlyWage,
-      hoursPerDay: laborSettings.hoursPerDay,
-      daysPerMonth: laborSettings.daysPerMonth,
-      monthlyLaborCost
-    });
-
-    try {
-      // Cerca se esiste già un record di configurazione per questo owner e mese
-      const existingLaborConfig = await db
+      // === LABOR COSTS ===
+      const today = new Date();
+      const monthlyLaborCost = laborSettings.averageHourlyWage * laborSettings.hoursPerDay * laborSettings.daysPerMonth;
+      const existingLaborConfig = await tx
         .select({ id: laborCosts.id })
         .from(laborCosts)
-        .where(and(
-          eq(laborCosts.userId, userId),
-          eq(laborCosts.role, 'configurazione'),
-          eq(laborCosts.monthKey, monthKey)
-        ))
+        .where(and(eq(laborCosts.userId, userId), eq(laborCosts.role, 'configurazione'), eq(laborCosts.monthKey, monthKey)))
         .limit(1);
 
       if (existingLaborConfig.length > 0) {
-        // Aggiorna il record esistente per questo mese
-        await db
-          .update(laborCosts)
-          .set({
-            hoursWorked: (laborSettings.hoursPerDay * laborSettings.daysPerMonth).toString(),
-            hourlyRate: laborSettings.averageHourlyWage.toString(),
-            totalCost: monthlyLaborCost.toString(),
-            notes: `Configurazione: ${laborSettings.hoursPerDay}h/giorno x ${laborSettings.daysPerMonth} giorni`,
-            monthKey: monthKey,
-            date: today
-          })
-          .where(eq(laborCosts.id, existingLaborConfig[0].id));
-
-        console.log(`✅ Costi lavoro aggiornati per mese ${monthKey}`);
+        await tx.update(laborCosts).set({
+          hoursWorked: (laborSettings.hoursPerDay * laborSettings.daysPerMonth).toString(),
+          hourlyRate: laborSettings.averageHourlyWage.toString(),
+          totalCost: monthlyLaborCost.toString(),
+          notes: `Configurazione: ${laborSettings.hoursPerDay}h/giorno x ${laborSettings.daysPerMonth} giorni`,
+          monthKey, date: today
+        }).where(eq(laborCosts.id, existingLaborConfig[0].id));
       } else {
-        // Crea nuovo record di configurazione per questo mese
-        const laborResult = await db
-          .insert(laborCosts)
-          .values({
-            userId,
-            date: today,
-            employeeName: 'Sistema Automatico',
-            role: 'configurazione',
-            hoursWorked: (laborSettings.hoursPerDay * laborSettings.daysPerMonth).toString(),
-            hourlyRate: laborSettings.averageHourlyWage.toString(),
-            totalCost: monthlyLaborCost.toString(),
-            shift: 'mensile',
-            notes: `Configurazione: ${laborSettings.hoursPerDay}h/giorno x ${laborSettings.daysPerMonth} giorni`,
-            monthKey: monthKey
-          });
-
-        console.log(`✅ Costi lavoro creati per mese ${monthKey}:`, laborResult);
-      }
-    } catch (error: any) {
-      console.error('❌ ERRORE salvando costi lavoro:', error);
-      console.error('Stack trace:', error.stack);
-    }
-    console.log('=== FINE SALVATAGGIO COSTI LAVORO ===')
-
-    console.log('=== SALVATAGGIO COSTI AVANZATI ===');
-    // Salva i costi avanzati come costi variabili
-    for (const [key, value] of Object.entries(advancedCosts)) {
-      let category = 'other';
-      let unitType = 'fixed';
-
-      // Determina la categoria basata sul nome del campo
-      if (key.includes('foodCostMonthly') || key.includes('beverageCostMonthly') || key.includes('packagingCosts') || key.includes('deliveryCommissions')) {
-        category = 'variable';
-        unitType = 'fixed';
-      } else if (key.includes('Percentage') || key.includes('percentage')) {
-        unitType = 'percentage';
-        category = 'variable';
-      } else if (key.includes('Cost') || key.includes('Budget') || key.includes('marketing') || key.includes('Marketing')) {
-        category = 'operational';
-      } else if (key.includes('Equipment') || key.includes('Furniture') || key.includes('Software') || key.includes('kitchen') || key.includes('furniture') || key.includes('pos')) {
-        category = 'depreciation';
-      } else if (key.includes('training') || key.includes('social') || key.includes('overtime') || key.includes('seasonal')) {
-        category = 'labor';
+        await tx.insert(laborCosts).values({
+          userId, date: today, employeeName: 'Sistema Automatico', role: 'configurazione',
+          hoursWorked: (laborSettings.hoursPerDay * laborSettings.daysPerMonth).toString(),
+          hourlyRate: laborSettings.averageHourlyWage.toString(),
+          totalCost: monthlyLaborCost.toString(),
+          shift: 'mensile',
+          notes: `Configurazione: ${laborSettings.hoursPerDay}h/giorno x ${laborSettings.daysPerMonth} giorni`,
+          monthKey
+        });
       }
 
-      console.log(`Processando costo avanzato: ${key} = ${value} (categoria: ${category}, tipo: ${unitType})`);
+      // === ADVANCED COSTS (variable costs) ===
+      for (const [key, value] of Object.entries(advancedCosts)) {
+        let category = 'other';
+        let unitType = 'fixed';
+        if (key.includes('foodCostMonthly') || key.includes('beverageCostMonthly') || key.includes('packagingCosts') || key.includes('deliveryCommissions')) { category = 'variable'; }
+        else if (key.includes('Percentage') || key.includes('percentage')) { unitType = 'percentage'; category = 'variable'; }
+        else if (key.includes('Cost') || key.includes('Budget') || key.includes('marketing') || key.includes('Marketing')) { category = 'operational'; }
+        else if (key.includes('Equipment') || key.includes('Furniture') || key.includes('Software') || key.includes('kitchen') || key.includes('furniture') || key.includes('pos')) { category = 'depreciation'; }
+        else if (key.includes('training') || key.includes('social') || key.includes('overtime') || key.includes('seasonal')) { category = 'labor'; }
 
-      try {
-          console.log(`🔍 [VAR STEP 1] Cerco record variabile per owner=${userId}, name="${key}", monthKey SPECIFICO="${monthKey}"`);
-
-          // Cerca se esiste un record per questo owner, nome E mese specifico
-          const existingRecord = await db
-            .select({ id: variableCosts.id, monthKey: variableCosts.monthKey })
-            .from(variableCosts)
-            .where(and(
-              eq(variableCosts.userId, userId),
-              eq(variableCosts.name, key),
-              eq(variableCosts.monthKey, monthKey)
-            ))
-            .limit(1);
-
-          console.log(`🔍 [VAR STEP 2] Record variabili trovati per ${monthKey}: ${existingRecord.length}`);
-          if (existingRecord.length > 0) {
-            console.log(`🔍 [VAR STEP 3] Record esistente per ${monthKey} - ID=${existingRecord[0].id}, aggiorno valore`);
-
-            // Record esistente trovato per questo mese specifico, aggiorna solo il valore
-            await db
-              .update(variableCosts)
-              .set({
-                unitCost: String(value),
-                updatedAt: new Date(),
-                isActive: true
-              })
-              .where(eq(variableCosts.id, existingRecord[0].id));
-
-            console.log(`✅ Costo avanzato aggiornato per mese ${monthKey}: ${key} = ${value}`);
-          } else {
-            console.log(`🆕 [VAR CREAZIONE] Nessun record per ${monthKey} - creo nuovo per ${key}`);
-
-              // Crea nuovo record
-              await db
-                .insert(variableCosts)
-                .values({
-                  userId,
-                  name: key,
-                  description: `Costo avanzato: ${key}`,
-                  category,
-                  unitType,
-                  unitCost: String(value),
-                  monthKey: monthKey,
-                  isActive: true
-                });
-              console.log(`✅ Costo avanzato creato per ${monthKey}: ${key} = ${value}`);
-            }
-          } catch (error: any) {
-            console.error(`❌ ERRORE salvando costo avanzato ${key}:`, error);
-            console.error('Stack trace:', error.stack);
-          }
-    }
-    console.log('=== FINE SALVATAGGIO COSTI AVANZATI ===')
-
-    console.log('=== SALVATAGGIO DEBITI ===');
-    // Salva i debiti come costi variabili con categoria 'debt'
-    if (debts && typeof debts === 'object') {
-      for (const [key, value] of Object.entries(debts)) {
-        const debtAmount = Number(value) || 0;
-        console.log(`Processando debito: ${key} = ${debtAmount} (tipo: ${typeof debtAmount})`);
-
-        try {
-          console.log(`🔍 [DEBT STEP 1] Cerco record debito per owner=${userId}, name="${key}", monthKey SPECIFICO="${monthKey}"`);
-
-          // Cerca se esiste un record per questo owner, nome E mese specifico
-          const existingRecord = await db
-            .select({ id: variableCosts.id, monthKey: variableCosts.monthKey })
-            .from(variableCosts)
-            .where(and(
-              eq(variableCosts.userId, userId),
-              eq(variableCosts.name, key),
-              eq(variableCosts.monthKey, monthKey),
-              eq(variableCosts.category, 'debt')
-            ))
-            .limit(1);
-
-          console.log(`🔍 [DEBT STEP 2] Record debiti trovati per ${monthKey}: ${existingRecord.length}`);
-          if (existingRecord.length > 0) {
-            console.log(`🔍 [DEBT STEP 3] Record esistente per ${monthKey} - ID=${existingRecord[0].id}, aggiorno valore`);
-
-            // Record esistente trovato per questo mese specifico, aggiorna solo il valore
-            await db
-              .update(variableCosts)
-              .set({
-                unitCost: debtAmount.toString(),
-                updatedAt: new Date(),
-                isActive: true
-              })
-              .where(eq(variableCosts.id, existingRecord[0].id));
-
-            console.log(`✅ Debito aggiornato per mese ${monthKey}: ${key} = ${debtAmount}`);
-          } else {
-            console.log(`🆕 [DEBT CREAZIONE] Nessun record per ${monthKey} - creo nuovo per ${key}`);
-
-            // Crea nuovo record
-            await db
-              .insert(variableCosts)
-              .values({
-                userId,
-                name: key,
-                description: `Debito: ${key}`,
-                category: 'debt',
-                unitType: 'fixed',
-                unitCost: debtAmount.toString(),
-                monthKey: monthKey,
-                isActive: true
-              });
-            console.log(`✅ Debito creato per ${monthKey}: ${key} = ${debtAmount}`);
-          }
-        } catch (error: any) {
-          console.error(`❌ ERRORE salvando debito ${key}:`, error);
-          console.error('Stack trace:', error.stack);
-        }
-      }
-    }
-    console.log('=== FINE SALVATAGGIO DEBITI ===')
-
-    console.log('=== SALVATAGGIO SALES CONVERSION DATA ===');
-    // Salva salesConversionData come costi variabili con categoria 'sales_conversion'
-    if (salesConversionData && typeof salesConversionData === 'object') {
-      // Campi deprecati in inglese da ignorare
-      const deprecatedEnglishFields = [
-        'totalLeads', 'newCustomersAcquired', 'customersFromFreeTrial',
-        'freeTrialCost', 'totalTransactions', 'averageTransactionValue'
-      ];
-
-      for (const [key, value] of Object.entries(salesConversionData)) {
-        // Salta i campi deprecati in inglese
-        if (deprecatedEnglishFields.includes(key)) {
-          console.log(`⏭️ Skipping deprecated field: ${key}`);
-          continue;
-        }
-
-        const salesValue = Number(value) || 0;
-        console.log(`Processando sales conversion: ${key} = ${salesValue}`);
-
-        try {
-          const existingRecord = await db
-            .select({ id: variableCosts.id, monthKey: variableCosts.monthKey })
-            .from(variableCosts)
-            .where(and(
-              eq(variableCosts.userId, userId),
-              eq(variableCosts.name, key),
-              eq(variableCosts.monthKey, monthKey),
-              eq(variableCosts.category, 'sales_conversion')
-            ))
-            .limit(1);
-
-          if (existingRecord.length > 0) {
-            await db
-              .update(variableCosts)
-              .set({
-                unitCost: salesValue.toString(),
-                updatedAt: new Date(),
-                isActive: true
-              })
-              .where(eq(variableCosts.id, existingRecord[0].id));
-
-            console.log(`✅ Sales conversion aggiornato per mese ${monthKey}: ${key} = ${salesValue}`);
-          } else {
-            await db
-              .insert(variableCosts)
-              .values({
-                userId,
-                name: key,
-                description: `Sales conversion: ${key}`,
-                category: 'sales_conversion',
-                unitType: 'fixed',
-                unitCost: salesValue.toString(),
-                monthKey: monthKey,
-                isActive: true
-              });
-            console.log(`✅ Sales conversion creato per ${monthKey}: ${key} = ${salesValue}`);
-          }
-        } catch (error: any) {
-          console.error(`❌ ERRORE salvando sales conversion ${key}:`, error);
-        }
-      }
-    }
-    console.log('=== FINE SALVATAGGIO SALES CONVERSION DATA ===')
-
-    console.log('=== SALVATAGGIO UNIT VARIABLE COSTS ===');
-    // Salva unitVariableCosts come costi variabili con categoria 'unit_variable'
-    if (unitVariableCosts && typeof unitVariableCosts === 'object') {
-      // Campi deprecati in inglese da ignorare
-      const deprecatedEnglishFields = [
-        'materialCostPerCustomer', 'laborHoursPerCustomer', 'hourlyLaborCost',
-        'commissionPerTransaction', 'otherVariableCosts'
-      ];
-
-      for (const [key, value] of Object.entries(unitVariableCosts)) {
-        // Salta i campi deprecati in inglese
-        if (deprecatedEnglishFields.includes(key)) {
-          console.log(`⏭️ Skipping deprecated field: ${key}`);
-          continue;
-        }
-
-        const unitValue = Number(value) || 0;
-        console.log(`Processando unit variable cost: ${key} = ${unitValue}`);
-
-        try {
-          const existingRecord = await db
-            .select({ id: variableCosts.id, monthKey: variableCosts.monthKey })
-            .from(variableCosts)
-            .where(and(
-              eq(variableCosts.userId, userId),
-              eq(variableCosts.name, key),
-              eq(variableCosts.monthKey, monthKey),
-              eq(variableCosts.category, 'unit_variable')
-            ))
-            .limit(1);
-
-          if (existingRecord.length > 0) {
-            await db
-              .update(variableCosts)
-              .set({
-                unitCost: unitValue.toString(),
-                updatedAt: new Date(),
-                isActive: true
-              })
-              .where(eq(variableCosts.id, existingRecord[0].id));
-
-            console.log(`✅ Unit variable cost aggiornato per mese ${monthKey}: ${key} = ${unitValue}`);
-          } else {
-            await db
-              .insert(variableCosts)
-              .values({
-                userId,
-                name: key,
-                description: `Unit variable cost: ${key}`,
-                category: 'unit_variable',
-                unitType: 'fixed',
-                unitCost: unitValue.toString(),
-                monthKey: monthKey,
-                isActive: true
-              });
-            console.log(`✅ Unit variable cost creato per ${monthKey}: ${key} = ${unitValue}`);
-          }
-        } catch (error: any) {
-          console.error(`❌ ERRORE salvando unit variable cost ${key}:`, error);
-        }
-      }
-    }
-    console.log('=== FINE SALVATAGGIO UNIT VARIABLE COSTS ===')
-
-    // === SALVATAGGIO NELLE TABELLE DEDICATE ===
-    console.log('=== SALVATAGGIO NELLE TABELLE DEDICATE ===');
-    
-    // Importa le tabelle dedicate
-    const { salesConversionData: salesConversionTable, unitVariableCosts: unitVariableCostsTable } = await import('../shared/schema.js');
-
-    // Salva salesConversionData nella tabella dedicata
-    if (salesConversionData && typeof salesConversionData === 'object') {
-      console.log('💾 [TABELLE DEDICATE] Salvando Sales Conversion Data:', salesConversionData);
-      
-      try {
-        // Cerca record esistente
-        const existingSalesData = await db
-          .select()
-          .from(salesConversionTable)
-          .where(and(
-            eq(salesConversionTable.userId, userId),
-            eq(salesConversionTable.monthKey, monthKey)
-          ))
+        const existingRecord = await tx
+          .select({ id: variableCosts.id })
+          .from(variableCosts)
+          .where(and(eq(variableCosts.userId, userId), eq(variableCosts.name, key), eq(variableCosts.monthKey, monthKey)))
           .limit(1);
 
+        if (existingRecord.length > 0) {
+          await tx.update(variableCosts).set({ unitCost: String(value), updatedAt: new Date(), isActive: true }).where(eq(variableCosts.id, existingRecord[0].id));
+        } else {
+          await tx.insert(variableCosts).values({ userId, name: key, description: `Costo avanzato: ${key}`, category, unitType, unitCost: String(value), monthKey, isActive: true });
+        }
+      }
+
+      // === DEBTS ===
+      if (debts && typeof debts === 'object') {
+        for (const [key, value] of Object.entries(debts)) {
+          const debtAmount = Number(value) || 0;
+          const existingRecord = await tx
+            .select({ id: variableCosts.id })
+            .from(variableCosts)
+            .where(and(eq(variableCosts.userId, userId), eq(variableCosts.name, key), eq(variableCosts.monthKey, monthKey), eq(variableCosts.category, 'debt')))
+            .limit(1);
+
+          if (existingRecord.length > 0) {
+            await tx.update(variableCosts).set({ unitCost: debtAmount.toString(), updatedAt: new Date(), isActive: true }).where(eq(variableCosts.id, existingRecord[0].id));
+          } else {
+            await tx.insert(variableCosts).values({ userId, name: key, description: `Debito: ${key}`, category: 'debt', unitType: 'fixed', unitCost: debtAmount.toString(), monthKey, isActive: true });
+          }
+        }
+      }
+
+      // === SALES CONVERSION DATA (variable costs mirror) ===
+      if (salesConversionData && typeof salesConversionData === 'object') {
+        const deprecatedEnglishFields = ['totalLeads', 'newCustomersAcquired', 'customersFromFreeTrial', 'freeTrialCost', 'totalTransactions', 'averageTransactionValue'];
+        for (const [key, value] of Object.entries(salesConversionData)) {
+          if (deprecatedEnglishFields.includes(key)) continue;
+          const salesValue = Number(value) || 0;
+          const existingRecord = await tx
+            .select({ id: variableCosts.id })
+            .from(variableCosts)
+            .where(and(eq(variableCosts.userId, userId), eq(variableCosts.name, key), eq(variableCosts.monthKey, monthKey), eq(variableCosts.category, 'sales_conversion')))
+            .limit(1);
+
+          if (existingRecord.length > 0) {
+            await tx.update(variableCosts).set({ unitCost: salesValue.toString(), updatedAt: new Date(), isActive: true }).where(eq(variableCosts.id, existingRecord[0].id));
+          } else {
+            await tx.insert(variableCosts).values({ userId, name: key, description: `Sales conversion: ${key}`, category: 'sales_conversion', unitType: 'fixed', unitCost: salesValue.toString(), monthKey, isActive: true });
+          }
+        }
+      }
+
+      // === UNIT VARIABLE COSTS (variable costs mirror) ===
+      if (unitVariableCosts && typeof unitVariableCosts === 'object') {
+        const deprecatedEnglishFields = ['materialCostPerCustomer', 'laborHoursPerCustomer', 'hourlyLaborCost', 'commissionPerTransaction', 'otherVariableCosts'];
+        for (const [key, value] of Object.entries(unitVariableCosts)) {
+          if (deprecatedEnglishFields.includes(key)) continue;
+          const unitValue = Number(value) || 0;
+          const existingRecord = await tx
+            .select({ id: variableCosts.id })
+            .from(variableCosts)
+            .where(and(eq(variableCosts.userId, userId), eq(variableCosts.name, key), eq(variableCosts.monthKey, monthKey), eq(variableCosts.category, 'unit_variable')))
+            .limit(1);
+
+          if (existingRecord.length > 0) {
+            await tx.update(variableCosts).set({ unitCost: unitValue.toString(), updatedAt: new Date(), isActive: true }).where(eq(variableCosts.id, existingRecord[0].id));
+          } else {
+            await tx.insert(variableCosts).values({ userId, name: key, description: `Unit variable cost: ${key}`, category: 'unit_variable', unitType: 'fixed', unitCost: unitValue.toString(), monthKey, isActive: true });
+          }
+        }
+      }
+
+      // === DEDICATED TABLES (salesConversionData) ===
+      if (salesConversionData && typeof salesConversionData === 'object') {
+        const existingSalesData = await tx.select().from(salesConversionTable).where(and(eq(salesConversionTable.userId, userId), eq(salesConversionTable.monthKey, monthKey))).limit(1);
         if (existingSalesData.length > 0) {
-          // Aggiorna esistente
-          await db
-            .update(salesConversionTable)
-            .set({
-              contattiTotali: salesConversionData.contattiTotali || 0,
-              nuoviClienti: salesConversionData.nuoviClienti || 0,
-              clientiDaProve: salesConversionData.clientiDaProve || 0,
-              costoProveGratuite: salesConversionData.costoProveGratuite?.toString() || '0',
-              spesaMarketing: salesConversionData.spesaMarketing?.toString() || '0',
-              numeroTransazioni: salesConversionData.numeroTransazioni || 0,
-              valoreMedioTransazione: salesConversionData.valoreMedioTransazione?.toString() || '0',
-              updatedAt: new Date()
-            })
-            .where(eq(salesConversionTable.id, existingSalesData[0].id));
-          
-          console.log('✅ Sales Conversion Data aggiornato nella tabella dedicata');
+          await tx.update(salesConversionTable).set({
+            contattiTotali: salesConversionData.contattiTotali || 0, nuoviClienti: salesConversionData.nuoviClienti || 0,
+            clientiDaProve: salesConversionData.clientiDaProve || 0, costoProveGratuite: salesConversionData.costoProveGratuite?.toString() || '0',
+            spesaMarketing: salesConversionData.spesaMarketing?.toString() || '0', numeroTransazioni: salesConversionData.numeroTransazioni || 0,
+            valoreMedioTransazione: salesConversionData.valoreMedioTransazione?.toString() || '0', updatedAt: new Date()
+          }).where(eq(salesConversionTable.id, existingSalesData[0].id));
         } else {
-          // Crea nuovo
-          await db
-            .insert(salesConversionTable)
-            .values({
-              userId,
-              monthKey,
-              contattiTotali: salesConversionData.contattiTotali || 0,
-              nuoviClienti: salesConversionData.nuoviClienti || 0,
-              clientiDaProve: salesConversionData.clientiDaProve || 0,
-              costoProveGratuite: salesConversionData.costoProveGratuite?.toString() || '0',
-              spesaMarketing: salesConversionData.spesaMarketing?.toString() || '0',
-              numeroTransazioni: salesConversionData.numeroTransazioni || 0,
-              valoreMedioTransazione: salesConversionData.valoreMedioTransazione?.toString() || '0'
-            });
-          
-          console.log('✅ Sales Conversion Data creato nella tabella dedicata');
+          await tx.insert(salesConversionTable).values({
+            userId, monthKey, contattiTotali: salesConversionData.contattiTotali || 0, nuoviClienti: salesConversionData.nuoviClienti || 0,
+            clientiDaProve: salesConversionData.clientiDaProve || 0, costoProveGratuite: salesConversionData.costoProveGratuite?.toString() || '0',
+            spesaMarketing: salesConversionData.spesaMarketing?.toString() || '0', numeroTransazioni: salesConversionData.numeroTransazioni || 0,
+            valoreMedioTransazione: salesConversionData.valoreMedioTransazione?.toString() || '0'
+          });
         }
-      } catch (error: any) {
-        console.error('❌ ERRORE salvando Sales Conversion Data nella tabella dedicata:', error);
       }
-    }
 
-    // Salva unitVariableCosts nella tabella dedicata
-    if (unitVariableCosts && typeof unitVariableCosts === 'object') {
-      console.log('💾 [TABELLE DEDICATE] Salvando Unit Variable Costs:', unitVariableCosts);
-      
-      try {
-        // Cerca record esistente
-        const existingUnitCosts = await db
-          .select()
-          .from(unitVariableCostsTable)
-          .where(and(
-            eq(unitVariableCostsTable.userId, userId),
-            eq(unitVariableCostsTable.monthKey, monthKey)
-          ))
-          .limit(1);
-
+      // === DEDICATED TABLES (unitVariableCosts) ===
+      if (unitVariableCosts && typeof unitVariableCosts === 'object') {
+        const existingUnitCosts = await tx.select().from(unitVariableCostsTable).where(and(eq(unitVariableCostsTable.userId, userId), eq(unitVariableCostsTable.monthKey, monthKey))).limit(1);
         if (existingUnitCosts.length > 0) {
-          // Aggiorna esistente
-          await db
-            .update(unitVariableCostsTable)
-            .set({
-              costoMaterialeCliente: unitVariableCosts.costoMaterialeCliente?.toString() || '0',
-              oreLavoroCliente: unitVariableCosts.oreLavoroCliente?.toString() || '0',
-              costoOrarioLavoro: unitVariableCosts.costoOrarioLavoro?.toString() || '0',
-              commissioniTransazione: unitVariableCosts.commissioniTransazione?.toString() || '0',
-              altriCostiVariabiliUnitari: unitVariableCosts.altriCostiVariabiliUnitari?.toString() || '0',
-              updatedAt: new Date()
-            })
-            .where(eq(unitVariableCostsTable.id, existingUnitCosts[0].id));
-          
-          console.log('✅ Unit Variable Costs aggiornato nella tabella dedicata');
+          await tx.update(unitVariableCostsTable).set({
+            costoMaterialeCliente: unitVariableCosts.costoMaterialeCliente?.toString() || '0', oreLavoroCliente: unitVariableCosts.oreLavoroCliente?.toString() || '0',
+            costoOrarioLavoro: unitVariableCosts.costoOrarioLavoro?.toString() || '0', commissioniTransazione: unitVariableCosts.commissioniTransazione?.toString() || '0',
+            altriCostiVariabiliUnitari: unitVariableCosts.altriCostiVariabiliUnitari?.toString() || '0', updatedAt: new Date()
+          }).where(eq(unitVariableCostsTable.id, existingUnitCosts[0].id));
         } else {
-          // Crea nuovo
-          await db
-            .insert(unitVariableCostsTable)
-            .values({
-              userId,
-              monthKey,
-              costoMaterialeCliente: unitVariableCosts.costoMaterialeCliente?.toString() || '0',
-              oreLavoroCliente: unitVariableCosts.oreLavoroCliente?.toString() || '0',
-              costoOrarioLavoro: unitVariableCosts.costoOrarioLavoro?.toString() || '0',
-              commissioniTransazione: unitVariableCosts.commissioniTransazione?.toString() || '0',
-              altriCostiVariabiliUnitari: unitVariableCosts.altriCostiVariabiliUnitari?.toString() || '0'
-            });
-          
-          console.log('✅ Unit Variable Costs creato nella tabella dedicata');
+          await tx.insert(unitVariableCostsTable).values({
+            userId, monthKey, costoMaterialeCliente: unitVariableCosts.costoMaterialeCliente?.toString() || '0',
+            oreLavoroCliente: unitVariableCosts.oreLavoroCliente?.toString() || '0', costoOrarioLavoro: unitVariableCosts.costoOrarioLavoro?.toString() || '0',
+            commissioniTransazione: unitVariableCosts.commissioniTransazione?.toString() || '0', altriCostiVariabiliUnitari: unitVariableCosts.altriCostiVariabiliUnitari?.toString() || '0'
+          });
         }
-      } catch (error: any) {
-        console.error('❌ ERRORE salvando Unit Variable Costs nella tabella dedicata:', error);
       }
-    }
+    });
 
-    console.log('=== FINE SALVATAGGIO NELLE TABELLE DEDICATE ===');
-
-    console.log('=== PREPARAZIONE RISPOSTA ===');
-    const responseData = { 
+    res.json({ 
       success: true, 
       message: 'Configurazione salvata con successo',
       timestamp: new Date().toISOString(),
       saved: {
-        fixedCosts: Object.keys(fixedCostsData).length,
+        fixedCosts: fixedCostsData ? (Array.isArray(fixedCostsData) ? fixedCostsData.length : Object.keys(fixedCostsData).length) : 0,
         laborSettings: 1,
-        advancedCosts: Object.keys(advancedCosts).length,
+        advancedCosts: advancedCosts ? Object.keys(advancedCosts).length : 0,
         debts: debts ? Object.keys(debts).length : 0
       }
-    };
-    console.log('Inviando risposta:', responseData);
-    console.log('=== BACKEND: SALVATAGGIO COMPLETATO ===');
-
-    res.json(responseData);
+    });
   } catch (error: any) {
     console.error('Errore nel salvataggio configurazione:', error);
     res.status(500).json({ error: 'Errore interno del server' });
