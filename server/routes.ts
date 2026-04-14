@@ -12,6 +12,19 @@ function getLocalDateString(): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+function toLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function safeFloat(value: string | number | null | undefined, fallback: number = 0): number {
+  if (value === null || value === undefined) return fallback;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+}
 import {
   insertAssetSchema,
   insertLiabilitySchema,
@@ -546,7 +559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: asset.type,
           amount: parseFloat(asset.value) || 0,
           description: `${asset.name} (Check-up)`,
-          date: asset.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
+          date: asset.createdAt ? toLocalDate(asset.createdAt) : getLocalDateString(),
           createdAt: asset.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
@@ -557,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: liability.type,
           amount: -(parseFloat(liability.remainingAmount) || 0),
           description: `${liability.name} (Check-up)`,
-          date: liability.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
+          date: liability.createdAt ? toLocalDate(liability.createdAt) : getLocalDateString(),
           createdAt: liability.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
@@ -567,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: income.type,
           amount: parseFloat(income.monthlyAmount) || 0,
           description: `${income.name} (Check-up - Mensile)`,
-          date: income.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
+          date: income.createdAt ? toLocalDate(income.createdAt) : getLocalDateString(),
           createdAt: income.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         })),
@@ -577,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: expense.category,
           amount: -(parseFloat(expense.monthlyAmount) || 0),
           description: `${expense.name} (Check-up - Mensile)`,
-          date: expense.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
+          date: expense.createdAt ? toLocalDate(expense.createdAt) : getLocalDateString(),
           createdAt: expense.createdAt?.toISOString() || new Date().toISOString(),
           source: 'checkup'
         }))
@@ -615,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         progress,
         recurringTransactions: recurringTransactions.map(rt => ({
           ...rt,
-          amount: parseFloat(rt.amount)
+          amount: safeFloat(rt.amount)
         }))
       });
     } catch (error) {
@@ -1018,7 +1031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if goal has initial amount and create transaction
       const currentAmount = goalData.currentAmount;
-      const currentAmountNum = parseFloat(currentAmount?.toString() || '0');
+      const currentAmountNum = safeFloat(currentAmount?.toString());
 
       console.log('=== TRANSACTION CREATION CHECK ===');
       console.log('currentAmount from goalData:', currentAmount);
@@ -1142,7 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Goal not found" });
       }
 
-      const currentAmount = parseFloat(existingGoal.currentAmount || '0');
+      const currentAmount = safeFloat(existingGoal.currentAmount);
 
 
       // If goal has money, require action parameter
@@ -1171,7 +1184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return res.status(404).json({ message: "Target goal not found" });
             }
             // Update target goal
-            const newAmount = parseFloat(targetGoal.currentAmount || '0') + currentAmount;
+            const newAmount = safeFloat(targetGoal.currentAmount) + currentAmount;
             await storage.updateGoal(targetGoalId, {
               currentAmount: newAmount.toString()
             });
@@ -1213,7 +1226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const customAccount = customAccounts.find(acc => acc.id === customAccountId);
 
               if (customAccount) {
-                const currentBalance = parseFloat(customAccount.balance || "0");
+                const currentBalance = safeFloat(customAccount.balance);
                 const newBalance = currentBalance + currentAmount;
 
                 await storage.updateCustomAccount(customAccountId, {
@@ -1228,22 +1241,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
                 switch (targetAccountId) {
                   case 'income':
-                    updates.incomeAccountBalance = (parseFloat(architecture.incomeAccountBalance || "0") + currentAmount).toString();
+                    updates.incomeAccountBalance = (safeFloat(architecture.incomeAccountBalance) + currentAmount).toString();
                     break;
                   case 'wealth':
-                    updates.wealthAccountBalance = (parseFloat(architecture.wealthAccountBalance || "0") + currentAmount).toString();
+                    updates.wealthAccountBalance = (safeFloat(architecture.wealthAccountBalance) + currentAmount).toString();
                     break;
                   case 'operating':
-                    updates.operatingAccountBalance = (parseFloat(architecture.operatingAccountBalance || "0") + currentAmount).toString();
+                    updates.operatingAccountBalance = (safeFloat(architecture.operatingAccountBalance) + currentAmount).toString();
                     break;
                   case 'emergency':
-                    updates.emergencyAccountBalance = (parseFloat(architecture.emergencyAccountBalance || "0") + currentAmount).toString();
+                    updates.emergencyAccountBalance = (safeFloat(architecture.emergencyAccountBalance) + currentAmount).toString();
                     break;
                   case 'investment':
-                    updates.investmentAccountBalance = (parseFloat(architecture.investmentAccountBalance || "0") + currentAmount).toString();
+                    updates.investmentAccountBalance = (safeFloat(architecture.investmentAccountBalance) + currentAmount).toString();
                     break;
                   case 'savings':
-                    updates.savingsAccountBalance = (parseFloat(architecture.savingsAccountBalance || "0") + currentAmount).toString();
+                    updates.savingsAccountBalance = (safeFloat(architecture.savingsAccountBalance) + currentAmount).toString();
                     break;
                 }
 
@@ -1466,7 +1479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!acc[category]) {
           acc[category] = { transactions: [], total: 0, count: 0 };
         }
-        const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+        const amount = safeFloat(transaction.amount);
         acc[category].transactions.push(transaction);
         acc[category].total += Math.abs(amount);
         acc[category].count += 1;
@@ -1497,7 +1510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const topTransactions = transactions
         .filter((t: any) => t.type === 'expense')
-        .sort((a: any, b: any) => parseFloat(b.amount) - parseFloat(a.amount))
+        .sort((a: any, b: any) => safeFloat(b.amount) - safeFloat(a.amount))
         .slice(0, 10);
 
       const transactionHeaders = ['Data', 'Descrizione', 'Categoria', 'Importo'];
@@ -1505,7 +1518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         new Date(t.date).toLocaleDateString('it-IT'),
         (t.description || t.category || 'N/A').substring(0, 25) + (t.description?.length > 25 ? '...' : ''),
         t.category || 'Altro',
-        `€${parseFloat(t.amount).toFixed(2)}`
+        `€${safeFloat(t.amount).toFixed(2)}`
       ]);
 
       if (transactionRows.length > 0) {
@@ -1814,23 +1827,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate distribution amounts
-      const monthlyIncome = parseFloat(architecture.monthlyIncome || "0");
+      const monthlyIncome = safeFloat(architecture.monthlyIncome);
       const distributions = {
-        wealth: parseFloat(architecture.wealthMonthlyAllocation || "0"),
-        operating: parseFloat(architecture.operatingMonthlyAllocation || "0"),
-        emergency: parseFloat(architecture.emergencyMonthlyAllocation || "0"),
-        investment: parseFloat(architecture.investmentMonthlyAllocation || "0"),
-        savings: parseFloat(architecture.savingsMonthlyAllocation || "0")
+        wealth: safeFloat(architecture.wealthMonthlyAllocation),
+        operating: safeFloat(architecture.operatingMonthlyAllocation),
+        emergency: safeFloat(architecture.emergencyMonthlyAllocation),
+        investment: safeFloat(architecture.investmentMonthlyAllocation),
+        savings: safeFloat(architecture.savingsMonthlyAllocation)
       };
 
       // Simulate distribution by updating account balances
       const updatedData = {
-        incomeAccountBalance: (parseFloat(architecture.incomeAccountBalance || "0") - Object.values(distributions).reduce((sum, amount) => sum + amount, 0)).toString(),
-        wealthAccountBalance: (parseFloat(architecture.wealthAccountBalance || "0") + distributions.wealth).toString(),
-        operatingAccountBalance: (parseFloat(architecture.operatingAccountBalance || "0") + distributions.operating).toString(),
-        emergencyAccountBalance: (parseFloat(architecture.emergencyAccountBalance || "0") + distributions.emergency).toString(),
-        investmentAccountBalance: (parseFloat(architecture.investmentAccountBalance || "0") + distributions.investment).toString(),
-        savingsAccountBalance: (parseFloat(architecture.savingsAccountBalance || "0") + distributions.savings).toString()
+        incomeAccountBalance: (safeFloat(architecture.incomeAccountBalance) - Object.values(distributions).reduce((sum, amount) => sum + amount, 0)).toString(),
+        wealthAccountBalance: (safeFloat(architecture.wealthAccountBalance) + distributions.wealth).toString(),
+        operatingAccountBalance: (safeFloat(architecture.operatingAccountBalance) + distributions.operating).toString(),
+        emergencyAccountBalance: (safeFloat(architecture.emergencyAccountBalance) + distributions.emergency).toString(),
+        investmentAccountBalance: (safeFloat(architecture.investmentAccountBalance) + distributions.investment).toString(),
+        savingsAccountBalance: (safeFloat(architecture.savingsAccountBalance) + distributions.savings).toString()
       };
 
       const updatedArchitecture = await storage.updateAccountArchitecture(architecture.id!, updatedData);
@@ -1870,7 +1883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate investment amounts against specific account balance
       if (transactionData.type === 'investment') {
-        const requestedAmount = parseFloat(transactionData.amount);
+        const requestedAmount = safeFloat(transactionData.amount);
         const accountType = transactionData.accountType;
 
         if (!accountType) {
@@ -1897,7 +1910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Tipo di conto non valido" });
         }
 
-        const accountBalance = parseFloat((architecture as any)[balanceField] || "0");
+        const accountBalance = safeFloat((architecture as any)[balanceField]);
 
         // STRICT VALIDATION: Check if the selected account has enough LIQUID balance
         if (requestedAmount > accountBalance) {
@@ -1918,8 +1931,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const customAccount = customAccounts.find(acc => acc.id === customAccountId);
 
           if (customAccount) {
-            const amount = parseFloat(transactionData.amount);
-            const currentBalance = parseFloat(customAccount.balance || "0");
+            const amount = safeFloat(transactionData.amount);
+            const currentBalance = safeFloat(customAccount.balance);
             let newBalance = currentBalance;
 
             // Income increases balance, expenses/investments decrease balance
@@ -1938,7 +1951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Handle standard accounts
           const architecture = await storage.getUserAccountArchitecture(userId);
           if (architecture) {
-            const amount = parseFloat(transactionData.amount);
+            const amount = safeFloat(transactionData.amount);
             const fieldMap = {
               'income': 'incomeAccountBalance',
               'wealth': 'wealthAccountBalance', 
@@ -1950,7 +1963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const balanceField = fieldMap[transactionData.accountType as keyof typeof fieldMap];
             if (balanceField) {
-              const currentBalance = parseFloat((architecture as any)[balanceField] || "0");
+              const currentBalance = safeFloat((architecture as any)[balanceField]);
               let newBalance = currentBalance;
 
               // Income increases balance, expenses/investments decrease balance
@@ -1977,8 +1990,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const targetGoal = goal.find(g => g.id === goalId);
 
         if (targetGoal) {
-          const contributionAmount = parseFloat(transactionData.amount);
-          const newCurrentAmount = parseFloat(targetGoal.currentAmount || '0') + contributionAmount;
+          const contributionAmount = safeFloat(transactionData.amount);
+          const newCurrentAmount = safeFloat(targetGoal.currentAmount) + contributionAmount;
 
           await storage.updateGoal(goalId, {
             currentAmount: newCurrentAmount.toString()
@@ -2132,7 +2145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (transactionToDelete && transactionToDelete.accountType) {
         const accountType = transactionToDelete.accountType;
-        const amount = parseFloat(transactionToDelete.amount);
+        const amount = safeFloat(transactionToDelete.amount);
 
         // Check if it's a custom account
         if (accountType.startsWith('custom_')) {
@@ -2141,7 +2154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const customAccount = customAccounts.find(acc => acc.id === customAccountId);
 
           if (customAccount) {
-            const currentBalance = parseFloat(customAccount.balance || "0");
+            const currentBalance = safeFloat(customAccount.balance);
             let newBalance = currentBalance;
 
             // Reverse the original operation: income decreased balance back, expenses/investments increase balance back
@@ -2171,7 +2184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const balanceField = fieldMap[accountType as keyof typeof fieldMap];
             if (balanceField) {
-              const currentBalance = parseFloat((architecture as any)[balanceField] || "0");
+              const currentBalance = safeFloat((architecture as any)[balanceField]);
               let newBalance = currentBalance;
 
               // Reverse the original operation: income decreased balance back, expenses/investments increase balance back
@@ -2198,8 +2211,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const targetGoal = goals.find(g => g.id === goalId);
 
         if (targetGoal) {
-          const contributionAmount = parseFloat(transactionToDelete.amount);
-          const newCurrentAmount = parseFloat(targetGoal.currentAmount || '0') - contributionAmount;
+          const contributionAmount = safeFloat(transactionToDelete.amount);
+          const newCurrentAmount = safeFloat(targetGoal.currentAmount) - contributionAmount;
 
           await storage.updateGoal(goalId, {
             currentAmount: Math.max(0, newCurrentAmount).toString() // Don't go below 0
@@ -2289,8 +2302,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         budgetCategory,
         frequency: req.body.frequency,
         dayOfMonth: req.body.dayOfMonth,
-        nextExecutionDate: nextExecutionDate.toISOString().split('T')[0],
-        startDate: startDate.toISOString().split('T')[0],
+        nextExecutionDate: toLocalDate(nextExecutionDate),
+        startDate: toLocalDate(startDate),
         endDate: req.body.endDate || null,
         isActive: true
       };
@@ -2305,7 +2318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         category,
         amount: String(req.body.amount),
         description: req.body.description,
-        date: startDate.toISOString().split('T')[0],
+        date: toLocalDate(startDate),
         budgetCategory,
         isRecurring: true,
         recurringId: recurringTransaction.id
@@ -2347,9 +2360,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { targetAmount, currentAmount, targetDate, expectedReturn } = req.body;
 
-      const target = parseFloat(targetAmount);
+      const target = safeFloat(targetAmount);
       const current = parseFloat(currentAmount) || 0;
-      const returnRate = parseFloat(expectedReturn) / 100 / 12; // Monthly rate
+      const returnRate = safeFloat(expectedReturn) / 100 / 12; // Monthly rate
       const months = Math.ceil((new Date(targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30));
 
       const remainingAmount = target - current;
@@ -2590,7 +2603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalValue: totalValue,
           totalReturn: totalReturn,
           returnPercentage: returnPercentage,
-          purchaseDate: inv.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
+          purchaseDate: inv.createdAt ? toLocalDate(inv.createdAt) : getLocalDateString(),
           instrumentType: instrumentType,
           goalId: inv.goalId
         };
@@ -2609,7 +2622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { name, symbol, shares, purchasePrice, currentPrice, type, instrumentType, goalId, purchaseDate, sourceAccount } = req.body;
 
       // Calculate total investment amount
-      const totalAmount = parseFloat(shares) * parseFloat(purchasePrice);
+      const totalAmount = safeFloat(shares) * safeFloat(purchasePrice);
 
       // Get account architecture to validate and handle transfers
       const architecture = await storage.getUserAccountArchitecture(userId);
@@ -2639,27 +2652,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         switch (sourceAccount) {
           case 'income':
-            sourceBalance = parseFloat(architecture.incomeAccountBalance || '0');
+            sourceBalance = safeFloat(architecture.incomeAccountBalance);
             sourceAccountName = architecture.incomeAccountName || 'Conto Entrate';
             sourceAccountBalanceField = 'incomeAccountBalance';
             break;
           case 'wealth':
-            sourceBalance = parseFloat(architecture.wealthAccountBalance || '0');
+            sourceBalance = safeFloat(architecture.wealthAccountBalance);
             sourceAccountName = architecture.wealthAccountName || 'Conto Ricchezza';
             sourceAccountBalanceField = 'wealthAccountBalance';
             break;
           case 'operating':
-            sourceBalance = parseFloat(architecture.operatingAccountBalance || '0');
+            sourceBalance = safeFloat(architecture.operatingAccountBalance);
             sourceAccountName = architecture.operatingAccountName || 'Conto Operativo';
             sourceAccountBalanceField = 'operatingAccountBalance';
             break;
           case 'emergency':
-            sourceBalance = parseFloat(architecture.emergencyAccountBalance || '0');
+            sourceBalance = safeFloat(architecture.emergencyAccountBalance);
             sourceAccountName = architecture.emergencyAccountName || 'Fondo Emergenze';
             sourceAccountBalanceField = 'emergencyAccountBalance';
             break;
           case 'savings':
-            sourceBalance = parseFloat(architecture.savingsAccountBalance || '0');
+            sourceBalance = safeFloat(architecture.savingsAccountBalance);
             sourceAccountName = architecture.savingsAccountName || 'Conto Risparmi';
             sourceAccountBalanceField = 'savingsAccountBalance';
             break;
@@ -2678,7 +2691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sourceUpdateData[sourceAccountBalanceField] = newSourceBalance.toString();
 
         // Update investment account balance (credit)
-        const currentInvestmentBalance = parseFloat(architecture.investmentAccountBalance || '0');
+        const currentInvestmentBalance = safeFloat(architecture.investmentAccountBalance);
         const newInvestmentBalance = currentInvestmentBalance + totalAmount;
 
         await storage.updateAccountArchitecture(architecture.id, {
@@ -2724,7 +2737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If no source account specified, just update investment account balance
       if (!sourceAccount) {
-        const currentBalance = parseFloat(architecture.investmentAccountBalance || '0');
+        const currentBalance = safeFloat(architecture.investmentAccountBalance);
         const newBalance = currentBalance + totalAmount;
 
         await storage.updateAccountArchitecture(architecture.id, {
@@ -2738,7 +2751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const targetGoal = goals.find(g => g.id === goalId);
 
         if (targetGoal) {
-          const newCurrentAmount = parseFloat(targetGoal.currentAmount || '0') + totalAmount;
+          const newCurrentAmount = safeFloat(targetGoal.currentAmount) + totalAmount;
 
           await storage.updateGoal(goalId, {
             currentAmount: newCurrentAmount.toString()
@@ -2766,7 +2779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalValue: invTotalValue,
         totalReturn: invTotalReturn,
         returnPercentage: invReturnPct,
-        purchaseDate: investment.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
+        purchaseDate: investment.createdAt ? toLocalDate(investment.createdAt) : getLocalDateString(),
         instrumentType: instrumentType || 'stock',
         goalId: investment.goalId
       };
@@ -2860,7 +2873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (goal) {
           // Reduce the goal's current amount by the original investment cost, not the current value
           const originalCost = shares * purchasePrice;
-          const currentAmount = parseFloat(goal.currentAmount || '0');
+          const currentAmount = safeFloat(goal.currentAmount);
           const newCurrentAmount = Math.max(0, currentAmount - originalCost);
 
           await storage.updateGoal(investment.goalId, {
@@ -2897,7 +2910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const accountName = accountNames[targetAccount as keyof typeof accountNames];
 
         if (balanceField) {
-          const currentBalance = parseFloat((architecture as any)[balanceField] || '0');
+          const currentBalance = safeFloat((architecture as any)[balanceField]);
           const newBalance = currentBalance + totalValue;
 
           console.log(`Updating account balance:
@@ -3058,7 +3071,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = {
         id: architecture.id,
         userId: architecture.userId,
-        monthlyIncome: parseFloat(architecture.monthlyIncome || "0"),
+        monthlyIncome: safeFloat(architecture.monthlyIncome),
         autoDistributionEnabled: architecture.autoDistributionEnabled,
         distributionDay: architecture.distributionDay,
         accounts: {
@@ -3066,7 +3079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: architecture.incomeAccountName,
             bankName: architecture.incomeAccountBankName,
             iban: architecture.incomeAccountIban,
-            balance: parseFloat(architecture.incomeAccountBalance || "0"),
+            balance: safeFloat(architecture.incomeAccountBalance),
             type: "income",
             description: "Hub centrale dove entrano tutti i soldi"
           },
@@ -3074,8 +3087,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: architecture.wealthAccountName,
             bankName: architecture.wealthAccountBankName,
             iban: architecture.wealthAccountIban,
-            balance: parseFloat(architecture.wealthAccountBalance || "0"),
-            monthlyAllocation: parseFloat(architecture.wealthMonthlyAllocation || "0"),
+            balance: safeFloat(architecture.wealthAccountBalance),
+            monthlyAllocation: safeFloat(architecture.wealthMonthlyAllocation),
             type: "wealth",
             description: "Liquidità per futuri investimenti"
           },
@@ -3083,8 +3096,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: architecture.operatingAccountName,
             bankName: architecture.operatingAccountBankName,
             iban: architecture.operatingAccountIban,
-            balance: parseFloat(architecture.operatingAccountBalance || "0"),
-            monthlyAllocation: parseFloat(architecture.operatingMonthlyAllocation || "0"),
+            balance: safeFloat(architecture.operatingAccountBalance),
+            monthlyAllocation: safeFloat(architecture.operatingMonthlyAllocation),
             type: "operating",
             description: "Spese quotidiane e variabili"
           },
@@ -3092,9 +3105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: architecture.emergencyAccountName,
             bankName: architecture.emergencyAccountBankName,
             iban: architecture.emergencyAccountIban,
-            balance: parseFloat(architecture.emergencyAccountBalance || "0"),
-            targetAmount: parseFloat(architecture.emergencyTargetAmount || "0"),
-            monthlyAllocation: parseFloat(architecture.emergencyMonthlyAllocation || "0"),
+            balance: safeFloat(architecture.emergencyAccountBalance),
+            targetAmount: safeFloat(architecture.emergencyTargetAmount),
+            monthlyAllocation: safeFloat(architecture.emergencyMonthlyAllocation),
             type: "emergency",
             description: "Fondo emergenze (3-6 mesi di spese)"
           },
@@ -3103,7 +3116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             bankName: architecture.investmentAccountBankName,
             iban: architecture.investmentAccountIban,
             balance: totalPortfolioValue, // Valore totale del portafoglio investimenti
-            monthlyAllocation: parseFloat(architecture.investmentMonthlyAllocation || "0"),
+            monthlyAllocation: safeFloat(architecture.investmentMonthlyAllocation),
             type: "investment",
             description: "Valore totale del portafoglio investimenti (es. Degiro)",
             totalPortfolioValue: totalPortfolioValue // Stesso valore - il conto rappresenta il portafoglio
@@ -3112,16 +3125,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             name: architecture.savingsAccountName,
             bankName: architecture.savingsAccountBankName,
             iban: architecture.savingsAccountIban,
-            balance: parseFloat(architecture.savingsAccountBalance || "0"),
-            monthlyAllocation: parseFloat(architecture.savingsMonthlyAllocation || "0"),
+            balance: safeFloat(architecture.savingsAccountBalance),
+            monthlyAllocation: safeFloat(architecture.savingsMonthlyAllocation),
             type: "savings",
             description: "Accantonamenti per spese annuali",
             subAccounts: subAccounts.map(sub => ({
               id: sub.id,
               name: sub.name,
-              targetAmount: parseFloat(sub.targetAmount || "0"),
-              currentAmount: parseFloat(sub.currentAmount || "0"),
-              monthlyAllocation: parseFloat(sub.monthlyAllocation || "0")
+              targetAmount: safeFloat(sub.targetAmount),
+              currentAmount: safeFloat(sub.currentAmount),
+              monthlyAllocation: safeFloat(sub.monthlyAllocation)
             }))
           }
         },
@@ -3149,7 +3162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user's monthly income for auto-calculation
       const incomes = await storage.getUserIncomes(userId);
-      const totalIncome = incomes.reduce((sum, income) => sum + parseFloat(income.monthlyAmount || "0"), 0);
+      const totalIncome = incomes.reduce((sum, income) => sum + safeFloat(income.monthlyAmount), 0);
 
       // Create architecture with 6 standard accounts
       const architectureData = {
@@ -3252,7 +3265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'investment',
               targetAmount: investmentConfig.portfolioGoal.targetAmount.toString(),
               currentAmount: currentAmount.toString(),
-              targetDate: investmentConfig.portfolioGoal.targetDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              targetDate: investmentConfig.portfolioGoal.targetDate || toLocalDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
               category: 'investimenti',
               monthlyContribution: investmentConfig.portfolioGoal.monthlyContribution?.toString() || '0',
               expectedReturn: '10.00',
@@ -3344,18 +3357,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user's total monthly income
       const incomes = await storage.getUserIncomes(userId);
-      const totalIncome = incomes.reduce((sum, income) => sum + parseFloat(income.monthlyAmount || "0"), 0);
+      const totalIncome = incomes.reduce((sum, income) => sum + safeFloat(income.monthlyAmount), 0);
 
       // Update architecture with current monthly income if different
-      if (totalIncome !== parseFloat(architecture.monthlyIncome || "0")) {
+      if (totalIncome !== safeFloat(architecture.monthlyIncome)) {
         await storage.updateAccountArchitecture(architecture.id, {
           monthlyIncome: totalIncome.toString()
         });
       }
 
       // Calculate smart distributions
-      const emergencyTarget = parseFloat(architecture.emergencyTargetAmount || "0");
-      const emergencyCurrent = parseFloat(architecture.emergencyAccountBalance || "0");
+      const emergencyTarget = safeFloat(architecture.emergencyTargetAmount);
+      const emergencyCurrent = safeFloat(architecture.emergencyAccountBalance);
       const emergencyNeeded = Math.max(0, emergencyTarget - emergencyCurrent);
 
       // Emergency gets priority if not full (10% or remaining needed)
@@ -3365,22 +3378,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const distributions = {
         income: totalIncome, // What comes in
-        wealth: parseFloat(architecture.wealthMonthlyAllocation || "0"),
-        operating: parseFloat(architecture.operatingMonthlyAllocation || "0"),
+        wealth: safeFloat(architecture.wealthMonthlyAllocation),
+        operating: safeFloat(architecture.operatingMonthlyAllocation),
         emergency: emergencyAllocation,
-        investment: parseFloat(architecture.investmentMonthlyAllocation || "0"),
-        savings: parseFloat(architecture.savingsMonthlyAllocation || "0")
+        investment: safeFloat(architecture.investmentMonthlyAllocation),
+        savings: safeFloat(architecture.savingsMonthlyAllocation)
       };
 
       // Get sub-accounts for savings breakdown
       const subAccounts = await storage.getSubAccounts(architecture.id);
       const savingsBreakdown = subAccounts.map(sub => ({
         name: sub.name,
-        monthlyAmount: parseFloat(sub.monthlyAllocation || "0"),
-        targetAmount: parseFloat(sub.targetAmount || "0"),
-        currentAmount: parseFloat(sub.currentAmount || "0"),
-        progress: parseFloat(sub.targetAmount || "0") > 0 
-          ? (parseFloat(sub.currentAmount || "0") / parseFloat(sub.targetAmount || "0")) * 100 
+        monthlyAmount: safeFloat(sub.monthlyAllocation),
+        targetAmount: safeFloat(sub.targetAmount),
+        currentAmount: safeFloat(sub.currentAmount),
+        progress: safeFloat(sub.targetAmount) > 0 
+          ? (safeFloat(sub.currentAmount) / safeFloat(sub.targetAmount)) * 100 
           : 0
       }));
 
@@ -3431,7 +3444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description: "Accantonamenti vari"
           }
         ].filter(instruction => instruction.amount > 0),
-        nextDistributionDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, architecture.distributionDay || 2).toISOString().split('T')[0]
+        nextDistributionDate: toLocalDate(new Date(new Date().getFullYear(), new Date().getMonth() + 1, architecture.distributionDay || 2))
       };
 
       res.json(response);
@@ -3486,7 +3499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Non puoi trasferire su lo stesso conto" });
       }
 
-      const transferAmount = parseFloat(amount);
+      const transferAmount = safeFloat(amount);
       if (transferAmount <= 0) {
         return res.status(400).json({ message: "L'importo deve essere maggiore di zero" });
       }
@@ -3508,7 +3521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const customAccountId = parseInt(fromAccount.replace('custom_', ''));
           const customAccount = customAccounts.find(acc => acc.id === customAccountId);
           if (!customAccount) return res.status(400).json({ message: "Conto personalizzato di origine non trovato" });
-          fromBalance = parseFloat(customAccount.balance || "0");
+          fromBalance = safeFloat(customAccount.balance);
         } else {
           const fieldMap = {
             'income': 'incomeAccountBalance',
@@ -3520,14 +3533,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           const fromField = fieldMap[fromAccount as keyof typeof fieldMap];
           if (!fromField) return res.status(400).json({ message: "Tipo di conto di origine non valido" });
-          fromBalance = parseFloat((architecture as any)[fromField] || "0");
+          fromBalance = safeFloat((architecture as any)[fromField]);
         }
 
         if (toAccount.startsWith('custom_')) {
           const customAccountId = parseInt(toAccount.replace('custom_', ''));
           const customAccount = customAccounts.find(acc => acc.id === customAccountId);
           if (!customAccount) return res.status(400).json({ message: "Conto personalizzato di destinazione non trovato" });
-          toBalance = parseFloat(customAccount.balance || "0");
+          toBalance = safeFloat(customAccount.balance);
         } else {
           const fieldMap = {
             'income': 'incomeAccountBalance',
@@ -3539,7 +3552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           const toField = fieldMap[toAccount as keyof typeof fieldMap];
           if (!toField) return res.status(400).json({ message: "Tipo di conto di destinazione non valido" });
-          toBalance = parseFloat((architecture as any)[toField] || "0");
+          toBalance = safeFloat((architecture as any)[toField]);
         }
 
         // Check sufficient balance
@@ -3634,8 +3647,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Tipo di conto non valido" });
       }
 
-      const fromBalance = parseFloat((architecture as any)[fromField] || "0");
-      const toBalance = parseFloat((architecture as any)[toField] || "0");
+      const fromBalance = safeFloat((architecture as any)[fromField]);
+      const toBalance = safeFloat((architecture as any)[toField]);
 
       // Check if from account has enough balance
       if (fromBalance < transferAmount) {
@@ -3756,7 +3769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate custom accounts total
       const customAccountsTotal = customAccounts.reduce((sum, account) => {
-        return sum + parseFloat(account.balance || "0");
+        return sum + safeFloat(account.balance);
       }, 0);
 
       // Calculate real patrimony from account architecture
@@ -3771,16 +3784,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       if (architecture) {
-        accounts.income.balance = parseFloat(architecture.incomeAccountBalance || "0");
-        accounts.wealth.balance = parseFloat(architecture.wealthAccountBalance || "0");
-        accounts.operating.balance = parseFloat(architecture.operatingAccountBalance || "0");
-        accounts.emergency.balance = parseFloat(architecture.emergencyAccountBalance || "0");
+        accounts.income.balance = safeFloat(architecture.incomeAccountBalance);
+        accounts.wealth.balance = safeFloat(architecture.wealthAccountBalance);
+        accounts.operating.balance = safeFloat(architecture.operatingAccountBalance);
+        accounts.emergency.balance = safeFloat(architecture.emergencyAccountBalance);
 
         // Investment account balance shows the TOTAL portfolio value (not separate cash)
         // This represents the value of all holdings in the investment account (e.g., Degiro)
         accounts.investment.balance = totalPortfolioValue;
 
-        accounts.savings.balance = parseFloat(architecture.savingsAccountBalance || "0");
+        accounts.savings.balance = safeFloat(architecture.savingsAccountBalance);
 
         // Liquidity total includes all accounts EXCEPT investment account (since it's not liquid cash)
         liquidityTotal = accounts.income.balance + accounts.wealth.balance + accounts.operating.balance + 
@@ -3790,41 +3803,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const investmentsTotal = totalPortfolioValue; // Total value of investment portfolio
 
       // Calculate other assets (from assets module)
-      const otherAssets = assets.reduce((sum, asset) => sum + parseFloat(asset.value || "0"), 0);
+      const otherAssets = assets.reduce((sum, asset) => sum + safeFloat(asset.value), 0);
 
       // Calculate liabilities
-      const liabilitiesTotal = liabilities.reduce((sum, lib) => sum + parseFloat(lib.totalAmount || "0"), 0);
+      const liabilitiesTotal = liabilities.reduce((sum, lib) => sum + safeFloat(lib.totalAmount), 0);
 
       // Net worth calculation - liquidityTotal + investment portfolio + other assets - liabilities
       const netWorth = liquidityTotal + totalPortfolioValue + otherAssets - liabilitiesTotal;
 
       // Cash flow from architecture
-      const monthlyIncome = parseFloat(architecture?.monthlyIncome || "0");
+      const monthlyIncome = safeFloat(architecture?.monthlyIncome);
       const monthlyExpenses = expenses
         .filter(exp => exp.isActive)
-        .reduce((sum, exp) => sum + parseFloat(exp.monthlyAmount || "0"), 0);
+        .reduce((sum, exp) => sum + safeFloat(exp.monthlyAmount), 0);
       const netCashFlow = monthlyIncome - monthlyExpenses;
 
       // Goals analysis with safe parsing
       const goalsAnalysis = {
         total: goals.length,
         completed: goals.filter(g => {
-          const current = parseFloat(g.currentAmount || '0');
-          const target = parseFloat(g.targetAmount || '0');
+          const current = safeFloat(g.currentAmount);
+          const target = safeFloat(g.targetAmount);
           return current >= target && target > 0;
         }).length,
         totalTarget: goals.reduce((sum, g) => {
-          const target = parseFloat(g.targetAmount || '0');
+          const target = safeFloat(g.targetAmount);
           return sum + (isNaN(target) ? 0 : target);
         }, 0),
         totalSaved: goals.reduce((sum, g) => {
-          const current = parseFloat(g.currentAmount || '0');
+          const current = safeFloat(g.currentAmount);
           return sum + (isNaN(current) ? 0 : current);
         }, 0),
         avgProgress: goals.length > 0 ? 
           goals.reduce((sum, g) => {
-            const current = parseFloat(g.currentAmount || '0');
-            const target = parseFloat(g.targetAmount || '0');
+            const current = safeFloat(g.currentAmount);
+            const target = safeFloat(g.targetAmount);
             if (target > 0 && !isNaN(current) && !isNaN(target)) {
               return sum + (current / target);
             }
@@ -3835,17 +3848,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Distribution plan from architecture including custom accounts
       const distributionPlan: Record<string, number> = {};
       if (architecture) {
-        if (architecture.wealthMonthlyAllocation) distributionPlan['wealth'] = parseFloat(architecture.wealthMonthlyAllocation);
-        if (architecture.operatingMonthlyAllocation) distributionPlan['operating'] = parseFloat(architecture.operatingMonthlyAllocation);
-        if (architecture.emergencyMonthlyAllocation) distributionPlan['emergency'] = parseFloat(architecture.emergencyMonthlyAllocation);
-        if (architecture.investmentMonthlyAllocation) distributionPlan['investment'] = parseFloat(architecture.investmentMonthlyAllocation);
-        if (architecture.savingsMonthlyAllocation) distributionPlan['savings'] = parseFloat(architecture.savingsMonthlyAllocation);
+        if (architecture.wealthMonthlyAllocation) distributionPlan['wealth'] = safeFloat(architecture.wealthMonthlyAllocation);
+        if (architecture.operatingMonthlyAllocation) distributionPlan['operating'] = safeFloat(architecture.operatingMonthlyAllocation);
+        if (architecture.emergencyMonthlyAllocation) distributionPlan['emergency'] = safeFloat(architecture.emergencyMonthlyAllocation);
+        if (architecture.investmentMonthlyAllocation) distributionPlan['investment'] = safeFloat(architecture.investmentMonthlyAllocation);
+        if (architecture.savingsMonthlyAllocation) distributionPlan['savings'] = safeFloat(architecture.savingsMonthlyAllocation);
       }
 
       // Add custom accounts to distribution plan
       customAccounts.forEach(account => {
-        if (account.monthlyAllocation && parseFloat(account.monthlyAllocation) > 0) {
-          distributionPlan[`custom_${account.id}`] = parseFloat(account.monthlyAllocation);
+        if (account.monthlyAllocation && safeFloat(account.monthlyAllocation) > 0) {
+          distributionPlan[`custom_${account.id}`] = safeFloat(account.monthlyAllocation);
         }
       });
 
@@ -3854,7 +3867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: t.id,
         type: t.type,
         description: t.description,
-        amount: parseFloat(t.amount),
+        amount: safeFloat(t.amount),
         date: t.date,
         category: t.category
       }));
@@ -3919,36 +3932,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate spending by budget category
         const needsSpent = monthlyTransactions
           .filter(t => t.budgetCategory === 'needs')
-          .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+          .reduce((sum, t) => sum + safeFloat(t.amount), 0);
 
         const wantsSpent = monthlyTransactions
           .filter(t => t.budgetCategory === 'wants')
-          .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+          .reduce((sum, t) => sum + safeFloat(t.amount), 0);
 
         const savingsSpent = monthlyTransactions
           .filter(t => t.budgetCategory === 'savings')
-          .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+          .reduce((sum, t) => sum + safeFloat(t.amount), 0);
 
-        const monthlyIncomeBudget = parseFloat(budgetSettings.monthlyIncome || '0');
-        const needsBudget = monthlyIncomeBudget * (parseFloat(budgetSettings.needsPercentage || '0') / 100);
-        const wantsBudget = monthlyIncomeBudget * (parseFloat(budgetSettings.wantsPercentage || '0') / 100);
-        const savingsBudget = monthlyIncomeBudget * (parseFloat(budgetSettings.savingsPercentage || '0') / 100);
+        const monthlyIncomeBudget = safeFloat(budgetSettings.monthlyIncome);
+        const needsBudget = monthlyIncomeBudget * (safeFloat(budgetSettings.needsPercentage) / 100);
+        const wantsBudget = monthlyIncomeBudget * (safeFloat(budgetSettings.wantsPercentage) / 100);
+        const savingsBudget = monthlyIncomeBudget * (safeFloat(budgetSettings.savingsPercentage) / 100);
 
         budgetData = {
           needs: {
             spent: needsSpent,
             budget: needsBudget,
-            percentage: parseFloat(budgetSettings.needsPercentage || '0')
+            percentage: safeFloat(budgetSettings.needsPercentage)
           },
           wants: {
             spent: wantsSpent,
             budget: wantsBudget,
-            percentage: parseFloat(budgetSettings.wantsPercentage || '0')
+            percentage: safeFloat(budgetSettings.wantsPercentage)
           },
           savings: {
             spent: savingsSpent,
             budget: savingsBudget,
-            percentage: parseFloat(budgetSettings.savingsPercentage || '0')
+            percentage: safeFloat(budgetSettings.savingsPercentage)
           },
           monthlyIncome: monthlyIncomeBudget
         };
@@ -4669,10 +4682,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Convert string numbers to actual numbers
       if (updateData.balance) {
-        updateData.balance = parseFloat(updateData.balance);
+        updateData.balance = safeFloat(updateData.balance);
       }
       if (updateData.monthlyAllocation) {
-        updateData.monthlyAllocation = parseFloat(updateData.monthlyAllocation);
+        updateData.monthlyAllocation = safeFloat(updateData.monthlyAllocation);
       }
 
       console.log('Update data after cleaning:', updateData);
@@ -5190,12 +5203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
 
           // Generate alerts for significant increases
-          if (Math.abs(parseFloat(trendPercentage)) > 20) {
+          if (Math.abs(safeFloat(trendPercentage)) > 20) {
             insights.alerts.push({
               type: trend > 0 ? 'warning' : 'info',
               category,
-              message: `${category}: ${trend > 0 ? 'Aumento' : 'Diminuzione'} del ${Math.abs(parseFloat(trendPercentage))}% rispetto al mese scorso`,
-              severity: Math.abs(parseFloat(trendPercentage)) > 50 ? 'high' : 'medium'
+              message: `${category}: ${trend > 0 ? 'Aumento' : 'Diminuzione'} del ${Math.abs(safeFloat(trendPercentage))}% rispetto al mese scorso`,
+              severity: Math.abs(safeFloat(trendPercentage)) > 50 ? 'high' : 'medium'
             });
           }
         }
