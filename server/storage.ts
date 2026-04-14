@@ -458,7 +458,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteGoal(id: number): Promise<void> {
-    await db.update(goals).set({ isActive: false }).where(eq(goals.id, id));
+    await db.transaction(async (tx) => {
+      await tx.update(goals).set({ isActive: false }).where(eq(goals.id, id));
+      await tx.update(investments).set({ goalId: null }).where(eq(investments.goalId, id));
+      await tx.update(transactions).set({ goalId: null }).where(eq(transactions.goalId, id));
+    });
   }
 
   // Investment operations

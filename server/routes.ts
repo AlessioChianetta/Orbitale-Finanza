@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {} as Record<string, number>);
 
-      const totalInvestments = investments.reduce((sum, inv) => sum + (parseFloat(inv.quantity || "0") * parseFloat(inv.currentPrice || "0")), 0);
+      const totalInvestments = investments.reduce((sum, inv) => sum + ((parseFloat(inv.quantity || "0") || 0) * (parseFloat(inv.currentPrice || "0") || 0)), 0);
 
       res.json({
         netWorth,
@@ -192,8 +192,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const totalPortfolioValue = await investments.reduce(async (sumPromise, inv) => {
         const sum = await sumPromise;
-        const quantity = parseFloat(inv.quantity || "0");
-        let currentPrice = parseFloat(inv.averagePrice || "0");
+        const quantity = parseFloat(inv.quantity || "0") || 0;
+        let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
 
         try {
           const symbolToUse = inv.symbol || inv.name;
@@ -335,8 +335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let totalCurrentValue = 0;
 
           for (const inv of linkedInvestments) {
-            const quantity = parseFloat(inv.quantity || "0");
-            let currentPrice = parseFloat(inv.averagePrice || "0");
+            const quantity = parseFloat(inv.quantity || "0") || 0;
+            let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
 
             try {
               const symbolToUse = inv.symbol || inv.name;
@@ -387,8 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const investmentsWithRealTimePrices = await Promise.all(
         investments.map(async (inv) => {
-          const quantity = parseFloat(inv.quantity || "0");
-          let currentPrice = parseFloat(inv.currentPrice || inv.averagePrice || "0");
+          const quantity = parseFloat(inv.quantity || "0") || 0;
+          let currentPrice = parseFloat(inv.currentPrice || inv.averagePrice || "0") || 0;
 
           try {
             const symbolToUse = inv.symbol || inv.name;
@@ -650,8 +650,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Calculate real-time total value of linked investments
             const realTimeValue = await linkedInvestments.reduce(async (sumPromise, inv) => {
               const sum = await sumPromise;
-              const quantity = parseFloat(inv.quantity || "0");
-              let currentPrice = parseFloat(inv.averagePrice || "0");
+              const quantity = parseFloat(inv.quantity || "0") || 0;
+              let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
 
               try {
                 const symbolToUse = inv.symbol || inv.name;
@@ -935,8 +935,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Calculate real-time total value of linked investments
             const realTimeValue = await linkedInvestments.reduce(async (sumPromise, inv) => {
               const sum = await sumPromise;
-              const quantity = parseFloat(inv.quantity || "0");
-              let currentPrice = parseFloat(inv.averagePrice || "0");
+              const quantity = parseFloat(inv.quantity || "0") || 0;
+              let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
 
               try {
                 const symbolToUse = inv.symbol || inv.name;
@@ -2541,8 +2541,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get real current prices from Finnhub API
       const enrichedInvestments = await Promise.all(investments.map(async (inv) => {
-        const purchasePrice = parseFloat(inv.averagePrice || '0'); // Using averagePrice as purchase price
-        const shares = parseFloat(inv.quantity || '0'); // Using quantity as shares
+        const purchasePrice = parseFloat(inv.averagePrice || '0') || 0;
+        const shares = parseFloat(inv.quantity || '0') || 0;
         const symbol = inv.name; // Symbol stored in name field
 
         // Determine instrument type based on symbol patterns
@@ -2747,18 +2747,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Return in the frontend expected format
+      const invShares = parseFloat(investment.quantity || '0') || 0;
+      const invPurchasePrice = parseFloat(investment.averagePrice || '0') || 0;
+      const invCurrentPrice = parseFloat(investment.currentPrice || investment.averagePrice || '0') || 0;
+      const invTotalValue = invShares * invCurrentPrice;
+      const invTotalCost = invShares * invPurchasePrice;
+      const invTotalReturn = invTotalValue - invTotalCost;
+      const invReturnPct = invTotalCost > 0 ? (invTotalReturn / invTotalCost) * 100 : 0;
+
       const enrichedInvestment = {
         id: investment.id,
         name: investment.name,
         type: investment.type,
         symbol: investment.symbol || symbol,
-        shares: parseFloat(investment.quantity || '0'),
-        purchasePrice: parseFloat(investment.averagePrice || '0'),
-        currentPrice: parseFloat(investment.currentPrice || investment.averagePrice || '0'),
-        totalValue: parseFloat(investment.quantity || '0') * parseFloat(investment.currentPrice || investment.averagePrice || '0'),
-        totalReturn: (parseFloat(investment.quantity || '0') * parseFloat(investment.currentPrice || investment.averagePrice || '0')) - (parseFloat(investment.quantity || '0') * parseFloat(investment.averagePrice || '0')),
-        returnPercentage: parseFloat(investment.averagePrice || '0') > 0 ? 
-          (((parseFloat(investment.currentPrice || '0') - parseFloat(investment.averagePrice || '0')) / parseFloat(investment.averagePrice || '0')) * 100) : 0,
+        shares: invShares,
+        purchasePrice: invPurchasePrice,
+        currentPrice: invCurrentPrice,
+        totalValue: invTotalValue,
+        totalReturn: invTotalReturn,
+        returnPercentage: invReturnPct,
         purchaseDate: investment.createdAt?.toISOString().split('T')[0] || getLocalDateString(),
         instrumentType: instrumentType || 'stock',
         goalId: investment.goalId
@@ -2813,8 +2820,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate the current value of the investment and gains/losses
-      const shares = parseFloat(investment.quantity || '1');
-      const purchasePrice = parseFloat(investment.averagePrice || '0');
+      const shares = parseFloat(investment.quantity || '1') || 0;
+      const purchasePrice = parseFloat(investment.averagePrice || '0') || 0;
 
       // Get current market price from Finnhub if available, otherwise use average price
       let currentPrice = purchasePrice;
@@ -3013,8 +3020,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate real-time total portfolio value for investment account
       const totalPortfolioValue = await investments.reduce(async (sumPromise, inv) => {
         const sum = await sumPromise;
-        const quantity = parseFloat(inv.quantity || "0");
-        let currentPrice = parseFloat(inv.averagePrice || "0");
+        const quantity = parseFloat(inv.quantity || "0") || 0;
+        let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
 
         try {
           const symbolToUse = inv.symbol || inv.name;
@@ -3711,8 +3718,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate investments total with real-time prices from Finnhub FIRST
       const totalPortfolioValue = await investments.reduce(async (sumPromise, inv) => {
         const sum = await sumPromise;
-        const quantity = parseFloat(inv.quantity || "0");
-        let currentPrice = parseFloat(inv.averagePrice || "0"); // Fallback to purchase price
+        const quantity = parseFloat(inv.quantity || "0") || 0;
+        let currentPrice = parseFloat(inv.averagePrice || "0") || 0; // Fallback to purchase price
 
         try {
           // Get real-time price from Finnhub for ALL investments
@@ -3969,17 +3976,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           count: investments.length,
           performance: investments.length > 0 ? 
             investments.reduce((sum, inv) => {
-              const shares = parseFloat(inv.quantity || '0');
-              const purchasePrice = parseFloat(inv.averagePrice || '0');
-              const currentPrice = parseFloat(inv.currentPrice || inv.averagePrice || '0');
+              const shares = parseFloat(inv.quantity || '0') || 0;
+              const purchasePrice = parseFloat(inv.averagePrice || '0') || 0;
+              const currentPrice = parseFloat(inv.currentPrice || inv.averagePrice || '0') || 0;
               const totalReturn = (shares * currentPrice) - (shares * purchasePrice);
               const returnPercentage = purchasePrice > 0 ? (totalReturn / (shares * purchasePrice)) * 100 : 0;
               return sum + returnPercentage;
             }, 0) / investments.length : 0,
           breakdown: [
             ...(await Promise.all(investments.map(async (inv) => {
-              const quantity = parseFloat(inv.quantity || "0");
-              let currentPrice = parseFloat(inv.averagePrice || "0");
+              const quantity = parseFloat(inv.quantity || "0") || 0;
+              let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
 
               try {
                 const symbolToUse = inv.symbol || inv.name;
@@ -4009,8 +4016,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return {
                 name: inv.name,
                 value: quantity * currentPrice,
-                performance: parseFloat(inv.averagePrice || "0") > 0 ?
-                  ((currentPrice - parseFloat(inv.averagePrice || "0")) / parseFloat(inv.averagePrice || "0")) * 100 : 0,
+                performance: (parseFloat(inv.averagePrice || "0") || 0) > 0 ?
+                  ((currentPrice - (parseFloat(inv.averagePrice || "0") || 0)) / (parseFloat(inv.averagePrice || "0") || 0)) * 100 : 0,
                 type: inv.type || 'Unknown'
               };
             }))),

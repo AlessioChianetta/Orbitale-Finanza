@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -547,7 +547,7 @@ export default function Investments() {
     symbol: "",
     shares: "",
     purchasePrice: "",
-    purchaseDate: new Date().toISOString().split('T')[0],
+    purchaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
     type: "stock" as 'stock' | 'crypto' | 'forex' | 'etf'
   });
 
@@ -587,29 +587,50 @@ export default function Investments() {
     retry: false,
   });
 
-  // Search instruments
+  const searchAbortRef = useRef<AbortController | null>(null);
+
   const searchInstruments = async (query: string) => {
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+      searchAbortRef.current = null;
+    }
+
     if (query.length < 2) {
       setSearchResults([]);
+      setIsSearching(false);
       return;
     }
 
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/financial/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/financial/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
       if (response.ok) {
         const results = await response.json();
         setSearchResults(results);
         setShowSearchResults(true);
       }
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Search error:', error);
+      }
     } finally {
-      setIsSearching(false);
+      if (searchAbortRef.current === controller) {
+        setIsSearching(false);
+      }
     }
   };
 
-  // Get real-time quote
+  useEffect(() => {
+    return () => {
+      if (searchAbortRef.current) {
+        searchAbortRef.current.abort();
+      }
+    };
+  }, []);
+
   const getQuote = async (symbol: string, type: string = 'stock') => {
     try {
       const response = await fetch(`/api/financial/quote/${symbol}?type=${type}`);
@@ -701,7 +722,7 @@ export default function Investments() {
         type: 'stock',
         shares: '',
         purchasePrice: '',
-        purchaseDate: new Date().toISOString().split('T')[0],
+        purchaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
         symbol: '',
         name: ''
       });
