@@ -505,14 +505,6 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
 
   const availableLiquidity = ((dashboardData as any)?.financialSummary?.availableLiquidity) || 0;
 
-  // Debug logging
-  console.log('[DEBUG] AddTransactionDialog rendered', {
-    isOpen,
-    formData,
-    dashboardData: dashboardData ? 'loaded' : 'loading',
-    accountArchitecture: accountArchitecture ? 'loaded' : 'loading',
-    customAccounts: Array.isArray(customAccounts) ? `${customAccounts.length} accounts` : 'loading'
-  });
 
   // Get the balance of the selected account
   const getSelectedAccountBalance = () => {

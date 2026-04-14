@@ -39,8 +39,6 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Log schema for debugging
-console.log('[SCHEMA] Users table websiteUrl field:', users.websiteUrl);
 
 // Financial assets (liquidity, investments, properties, etc.)
 export const assets = pgTable("assets", {

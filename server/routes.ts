@@ -2402,16 +2402,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.user.id);
       const settings = await storage.getUserBudgetSettings(userId);
-      console.log('[BUDGET-SETTINGS-DEBUG] User ID:', userId);
-      console.log('[BUDGET-SETTINGS-DEBUG] Settings found:', settings ? 'YES' : 'NO');
-      if (settings) {
-        console.log('[BUDGET-SETTINGS-DEBUG] Monthly Income:', settings.monthlyIncome);
-        console.log('[BUDGET-SETTINGS-DEBUG] Percentages:', {
-          needs: settings.needsPercentage,
-          wants: settings.wantsPercentage,
-          savings: settings.savingsPercentage
-        });
-      }
       res.json(settings || null);
     } catch (error) {
       console.error("Error fetching budget settings:", error);
@@ -2448,15 +2438,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/category-budgets', isAuthenticated, async (req: any, res) => {
     try {
       const userId = parseInt(req.user.id);
-      console.log('[CATEGORY-BUDGETS-DEBUG] Fetching for user:', userId);
       const budgets = await db.select()
         .from(categoryBudgets)
         .where(and(eq(categoryBudgets.userId, userId), eq(categoryBudgets.isActive, true)))
         .orderBy(categoryBudgets.category, categoryBudgets.subcategory);
-      console.log('[CATEGORY-BUDGETS-DEBUG] Found budgets:', budgets.length);
-      if (budgets.length > 0) {
-        console.log('[CATEGORY-BUDGETS-DEBUG] First budget:', budgets[0]);
-      }
       res.json(budgets);
     } catch (error) {
       console.error("Error fetching category budgets:", error);

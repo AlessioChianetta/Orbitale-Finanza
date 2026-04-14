@@ -1732,11 +1732,6 @@ export default function Budget() {
     queryKey: ['/api/dashboard']
   });
 
-  // Debug logs
-  console.log('[BUDGET-DEBUG] Budget Settings:', budgetSettings);
-  console.log('[BUDGET-DEBUG] Transactions:', transactions?.length || 0);
-  console.log('[BUDGET-DEBUG] Custom Categories:', budgetSettings?.customCategories);
-
   // State per controlli temporali
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM format
   const [selectedDateRange, setSelectedDateRange] = useState<{start: string, end: string} | null>(null);
@@ -1827,8 +1822,6 @@ export default function Budget() {
   const spendingData: CategorySpending[] = [];
   if (transactions) {
     const budgetTransactions = getFilteredTransactions(transactions);
-    console.log('[BUDGET-DEBUG] Filtered transactions:', budgetTransactions.length);
-    console.log('[BUDGET-DEBUG] All Categories Map:', Object.keys(allCategories));
 
     // Group by category
     const groupedByCategory: Record<string, Transaction[]> = {};

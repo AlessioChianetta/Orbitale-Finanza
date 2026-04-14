@@ -59,8 +59,12 @@ export function BudgetForecastDashboard() {
 
   // Fetch transaction data for analysis
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
-    queryKey: ['/api/transactions'],
-    queryFn: () => apiRequest('GET', '/api/transactions?limit=1000'),
+    queryKey: ['/api/transactions', 'all'],
+    queryFn: async () => {
+      const res = await fetch('/api/transactions?limit=10000', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json();
+    },
   });
 
   // Fetch existing forecasts
