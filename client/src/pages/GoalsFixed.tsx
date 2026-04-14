@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { safeFloat, safeInt } from "@/lib/utils";
+import { safeFloat, safeInt, getLocalDateString, dateToLocalString } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -367,7 +367,7 @@ function QuickActionsDialog({ trigger, onUpdate }: { trigger: React.ReactNode; o
     addTransactionMutation.mutate({
       ...transactionData,
       amount: safeFloat(transactionData.amount),
-      date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()
+      date: getLocalDateString()
     });
   };
 
@@ -1189,7 +1189,7 @@ export function GoalCreationDialog({ trigger }: { trigger: React.ReactNode }) {
       description: template.description,
       targetAmount: template.defaultAmount?.toString() || '',
       currentAmount: suggestedCurrentAmount,
-      targetDate: (() => { const d = new Date(Date.now() + (template.defaultTimeframe || 60) * 30 * 24 * 60 * 60 * 1000); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
+      targetDate: dateToLocalString(new Date(Date.now() + (template.defaultTimeframe || 60) * 30 * 24 * 60 * 60 * 1000)),
       monthlyContribution: ''
     });
     setStep(2);

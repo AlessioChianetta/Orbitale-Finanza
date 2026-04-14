@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { safeFloat, safeInt } from "@/lib/utils";
+import { safeFloat, safeInt, getLocalDateString } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -1755,7 +1755,7 @@ function AccountConfigurationStep({
                         quantity: 0, 
                         purchasePrice: 0, 
                         type: 'etf',
-                        purchaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() // Data odierna come default
+                        purchaseDate: getLocalDateString() // Data odierna come default
                       }
                     ]
                   });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { safeFloat, safeInt } from "@/lib/utils";
+import { safeFloat, safeInt, getLocalDateString } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -548,7 +548,7 @@ export default function Investments() {
     symbol: "",
     shares: "",
     purchasePrice: "",
-    purchaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
+    purchaseDate: getLocalDateString(),
     type: "stock" as 'stock' | 'crypto' | 'forex' | 'etf'
   });
 
@@ -724,7 +724,7 @@ export default function Investments() {
         type: 'stock',
         shares: '',
         purchasePrice: '',
-        purchaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
+        purchaseDate: getLocalDateString(),
         symbol: '',
         name: ''
       });

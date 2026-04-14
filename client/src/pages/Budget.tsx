@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { safeFloat, toLocaleDateSafe } from "@/lib/utils";
+import { safeFloat, toLocaleDateSafe, getLocalMonthKey } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1740,7 +1740,7 @@ export default function Budget() {
   });
 
   // State per controlli temporali
-  const [selectedMonth, setSelectedMonth] = useState<string>((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`; })()); // YYYY-MM format
+  const [selectedMonth, setSelectedMonth] = useState<string>(getLocalMonthKey()); // YYYY-MM format
   const [selectedDateRange, setSelectedDateRange] = useState<{start: string, end: string} | null>(null);
   const [timeFilter, setTimeFilter] = useState<'current-month' | 'custom-month' | 'date-range'>('current-month');
   const [activeTab, setActiveTab] = useState<string>('overview');
