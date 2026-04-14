@@ -1822,22 +1822,46 @@ export default function CostAnalysisDashboard() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">Analisi Costi e Break-Even</h2>
-              <p className="text-gray-600 mt-2 text-base leading-relaxed">Monitora la redditività e ottimizza la gestione finanziaria</p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                      <div className="p-2 sm:p-3 bg-orange-600 rounded-xl shadow-lg flex-shrink-0">
+                        <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">
+                          Analisi Costi e Break-Even
+                        </h1>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                          <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Gestione Finanziaria Aziendale</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">
+                      Monitora la redditività e ottimizza la gestione finanziaria
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      refetchDashboard();
+                      refetchBreakEven();
+                      refetchLabor();
+                    }}
+                    className="bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:bg-orange-700 transition-all duration-300 border border-orange-500"
+                  >
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Aggiorna Analisi
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Button 
-              onClick={() => {
-                refetchDashboard();
-                refetchBreakEven();
-                refetchLabor();
-              }}
-              className="h-11 px-5 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <Calculator className="w-4 h-4 mr-2" />
-              Aggiorna Analisi
-            </Button>
           </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

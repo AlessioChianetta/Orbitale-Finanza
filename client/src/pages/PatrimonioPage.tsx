@@ -38,7 +38,7 @@ export default function PatrimonioPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50" data-testid="page-patrimonio">
+    <div className="min-h-screen bg-gray-50" data-testid="page-patrimonio">
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-lg shadow-sm border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
