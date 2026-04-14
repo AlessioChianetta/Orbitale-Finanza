@@ -117,6 +117,28 @@ Percorso Capitale is a comprehensive financial management application built with
 - Session secret for authentication security
 - Supabase PostgreSQL connection parameters
 
+## Design System
+
+### Core Design Patterns (Reference: Transactions.tsx)
+All pages follow a consistent visual language:
+
+- **Page background**: `min-h-screen bg-gray-50`
+- **Content wrapper**: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8`
+- **Hero Header**: Dark slate gradient (`from-slate-900 via-slate-800 to-gray-900`) with decorative circles, icon badge, title with animated pulse dot, and subtitle
+- **Summary Stat Cards**: `border-0 shadow-md bg-gradient-to-br from-{color}-50 via-{color2}-50 to-white` with gradient icon badges (`rounded-xl shadow-lg`)
+- **Content Cards**: `border-0 shadow-lg bg-white` or `shadow-xl`
+- **Loading State**: Centered spinner with "Caricamento..." text on bg-gray-50
+- **Buttons**: Colored bg with `rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300`
+- **Exception**: InvestmentAcademy.tsx uses intentional dark theme for learning context
+
+### Shared Utilities (client/src/lib/utils.ts)
+- `safeFloat(value, fallback)` - Safe parseFloat
+- `safeInt(value, fallback)` - Safe parseInt
+- `toLocaleDateSafe(dateStr)` - Timezone-safe date formatting
+- `getLocalDateString()` - Local YYYY-MM-DD
+- `getLocalMonthKey()` - Local YYYY-MM
+- `dateToLocalString(date)` - Date object to YYYY-MM-DD
+
 ## Changelog
 
 - June 22, 2025. Initial setup

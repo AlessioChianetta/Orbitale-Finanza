@@ -293,17 +293,10 @@ export default function Academy() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-soft-gray">
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 bg-gray-200 rounded-xl"></div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -337,14 +330,36 @@ export default function Academy() {
   };
 
   return (
-    <div className="min-h-screen bg-soft-gray">
+    <div className="min-h-screen bg-gray-50">
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-dark-gray mb-2">L'Accademia</h1>
-          <p className="text-sm sm:text-base text-medium-gray">
-            La tua crescita finanziaria continua: impara, simula e ottimizza i tuoi investimenti
-          </p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                      <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                        <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">L'Accademia</h1>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                          <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Formazione attiva</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">La tua crescita finanziaria continua: impara, simula e ottimizza i tuoi investimenti</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4 sm:space-y-6">
@@ -368,7 +383,7 @@ export default function Academy() {
           {/* Lessons Tab */}
           <TabsContent value="lessons" className="space-y-4 sm:space-y-6">
             {/* Progress Overview */}
-            <Card className="p-4 sm:p-6">
+            <Card className="p-4 sm:p-6 border-0 shadow-lg">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
                 <div>
                   <h3 className="text-base sm:text-lg font-semibold">Il Tuo Percorso</h3>
@@ -446,7 +461,7 @@ export default function Academy() {
           <TabsContent value="progress" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Level Progress */}
-              <Card className="p-6">
+              <Card className="p-6 border-0 shadow-lg">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="p-2 bg-purple-50 rounded-lg">
                     <Trophy className="w-6 h-6 text-purple-600" />
@@ -466,7 +481,7 @@ export default function Academy() {
               </Card>
 
               {/* Streak */}
-              <Card className="p-6">
+              <Card className="p-6 border-0 shadow-lg">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="p-2 bg-orange-50 rounded-lg">
                     <Target className="w-6 h-6 text-orange-600" />
@@ -482,7 +497,7 @@ export default function Academy() {
               </Card>
 
               {/* Total Points */}
-              <Card className="p-6">
+              <Card className="p-6 border-0 shadow-lg">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="p-2 bg-yellow-50 rounded-lg">
                     <Star className="w-6 h-6 text-yellow-600" />
@@ -499,7 +514,7 @@ export default function Academy() {
             </div>
 
             {/* Achievements */}
-            <Card className="p-6">
+            <Card className="p-6 border-0 shadow-lg">
               <h3 className="text-lg font-semibold mb-4">Obiettivi e Traguardi</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
@@ -524,7 +539,7 @@ export default function Academy() {
 
           {/* Simulator Tab */}
           <TabsContent value="simulator" className="space-y-6">
-            <Card className="p-6">
+            <Card className="p-6 border-0 shadow-lg">
               <div className="text-center">
                 <TrendingUp className="w-12 h-12 text-blue-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Simulatore "E se...?"</h3>

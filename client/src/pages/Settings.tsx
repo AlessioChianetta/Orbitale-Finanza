@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Globe, Mail, Save } from "lucide-react";
+import { User, Globe, Mail, Save, Settings as SettingsIcon, Calendar } from "lucide-react";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -18,9 +18,7 @@ export default function Settings() {
   const [lastName, setLastName] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
 
-  // Carica i dati utente all'avvio
   useEffect(() => {
-    // Se abbiamo già i dati da user, usali immediatamente
     if (user && typeof user === 'object') {
       setFirstName(('firstName' in user ? user.firstName as string : '') || '');
       setLastName(('lastName' in user ? user.lastName as string : '') || '');
@@ -80,7 +78,6 @@ export default function Settings() {
       return response.json();
     },
     onSuccess: async (data) => {
-      // Aggiorna immediatamente lo stato locale con i dati del server
       if (data.user) {
         setFirstName(data.user.firstName);
         setLastName(data.user.lastName);
@@ -92,7 +89,6 @@ export default function Settings() {
         description: "Le tue impostazioni sono state aggiornate con successo",
       });
 
-      // Invalida e ricarica i dati utente
       await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
       await queryClient.refetchQueries({ queryKey: ['/api/user'] });
     },
@@ -110,19 +106,58 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-soft-gray p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-dark-gray mb-2">Impostazioni</h1>
-          <p className="text-medium-gray">Gestisci le tue informazioni personali e collegamenti esterni</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                    <div className="p-2 sm:p-3 bg-indigo-600 rounded-xl shadow-lg flex-shrink-0">
+                      <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">
+                        Impostazioni
+                      </h1>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                        <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Gestione Profilo e Preferenze</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">
+                    Gestisci le tue informazioni personali e collegamenti esterni
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center text-gray-300 text-xs bg-gray-800/50 px-2 sm:px-3 py-1 sm:py-2 rounded-lg backdrop-blur-sm self-center sm:self-auto">
+                  <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                  <span className="truncate">
+                    {new Date().toLocaleDateString('it-IT', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: '2-digit'
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Informazioni Personali */}
-          <Card>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Card className="border-0 shadow-lg bg-white">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <User className="w-5 h-5 text-trust-blue" />
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                  <User className="w-4 h-4 text-white" />
+                </div>
                 <span>Informazioni Personali</span>
               </CardTitle>
               <CardDescription>
@@ -154,7 +189,7 @@ export default function Settings() {
               <div>
                 <Label htmlFor="email">Email</Label>
                 <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4 text-medium-gray" />
+                  <Mail className="w-4 h-4 text-gray-400" />
                   <Input
                     id="email"
                     value={user && typeof user === 'object' && 'email' in user ? (user.email as string) : ''}
@@ -162,16 +197,17 @@ export default function Settings() {
                     className="bg-gray-100"
                   />
                 </div>
-                <p className="text-xs text-medium-gray mt-1">L'email non può essere modificata</p>
+                <p className="text-xs text-gray-500 mt-1">L'email non può essere modificata</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Collegamenti Esterni */}
-          <Card>
+          <Card className="border-0 shadow-lg bg-white">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Globe className="w-5 h-5 text-trust-blue" />
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
+                  <Globe className="w-4 h-4 text-white" />
+                </div>
                 <span>Collegamenti Esterni</span>
               </CardTitle>
               <CardDescription>
@@ -188,7 +224,7 @@ export default function Settings() {
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder="https://tuosito.it"
                 />
-                <p className="text-xs text-medium-gray mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   Questo link sarà accessibile dal menu "Servizi esterni" → "SiteAle"
                 </p>
                 {websiteUrl && (
@@ -196,7 +232,7 @@ export default function Settings() {
                     href={websiteUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-xs text-trust-blue hover:underline mt-1 inline-block"
+                    className="text-xs text-blue-600 hover:underline mt-1 inline-block"
                   >
                     Visualizza il tuo sito →
                   </a>
@@ -205,12 +241,11 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Salva Modifiche */}
           <div className="flex justify-end">
             <Button
               onClick={handleSave}
               disabled={updateSettingsMutation.isPending}
-              className="bg-trust-blue hover:bg-blue-600"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <Save className="w-4 h-4 mr-2" />
               {updateSettingsMutation.isPending ? "Salvataggio..." : "Salva Modifiche"}

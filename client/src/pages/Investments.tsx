@@ -799,16 +799,10 @@ export default function Investments() {
 
   if (isLoading || isInvestmentsLoading) {
     return (
-      <div className="min-h-screen bg-soft-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-32 bg-gray-200 rounded-2xl"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -962,118 +956,94 @@ export default function Investments() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* Hero Section - Mobile Optimized */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-blue-400/20 rounded-full blur-xl"></div>
-          <div className="absolute bottom-10 right-10 w-24 h-24 bg-purple-400/20 rounded-full blur-xl"></div>
-          <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-indigo-400/10 rounded-full blur-2xl"></div>
-        </div>
-        <div className="relative container mx-auto px-4 py-10 sm:py-20">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 sm:py-3 mb-4 sm:mb-6">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium">Piattaforma di Investimento Intelligente</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-              Area Investimenti
-            </h1>
-            <p className="text-sm sm:text-xl md:text-2xl text-blue-100 mb-6 sm:mb-8 max-w-3xl mx-auto">
-              Dalla teoria alla pratica: costruisci e monitora il tuo portafoglio di investimenti con strumenti professionali
-            </p>
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm">
-              <div className="flex items-center gap-1 sm:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-2">
-                <PieChart className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="truncate">Analisi Portafoglio</span>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-2">
-                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="truncate">Performance Real-Time</span>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-2">
-                <Target className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="truncate">Portafogli Modello</span>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-2">
-                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="truncate">Educazione Avanzata</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                    <div className="p-2 sm:p-3 bg-indigo-600 rounded-xl shadow-lg flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Area Investimenti</h1>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                        <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Piattaforma di Investimento Intelligente</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Dalla teoria alla pratica: costruisci e monitora il tuo portafoglio di investimenti con strumenti professionali</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Quick Stats - Mobile Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6 sm:mt-8 mb-6 sm:mb-8">
+          <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-green-50 via-emerald-50 to-white">
+            <CardContent className="relative p-4 z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm font-medium">Conto Investimenti</p>
-                  <p className="text-2xl font-bold">{formatEuro(totalPortfolioValue)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <DollarSign className="w-3 h-3" />
-                    <span className="text-xs text-green-100">Valore totale portafoglio</span>
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg flex-shrink-0">
+                    <DollarSign className="w-4 h-4 text-white" />
                   </div>
-                </div>
-                <div className="p-3 bg-white/20 rounded-full">
-                  <DollarSign className="h-6 w-6" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-green-800 mb-1 uppercase truncate">Conto Investimenti</p>
+                    <p className="text-lg md:text-xl font-black text-green-700 truncate">{formatEuro(totalPortfolioValue)}</p>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-blue-50 via-cyan-50 to-white">
+            <CardContent className="relative p-4 z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">Guadagno/Perdita</p>
-                  <p className="text-2xl font-bold">{formatEuro(totalReturn, true)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <TrendingUp className="w-3 h-3" />
-                    <span className="text-xs text-blue-100">{returnPercentage >= 0 ? '+' : ''}{returnPercentage.toFixed(2)}%</span>
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg flex-shrink-0">
+                    <BarChart3 className="w-4 h-4 text-white" />
                   </div>
-                </div>
-                <div className="p-3 bg-white/20 rounded-full">
-                  <BarChart3 className="h-6 w-6" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-blue-800 mb-1 uppercase truncate">Guadagno/Perdita</p>
+                    <p className="text-lg md:text-xl font-black text-blue-700 truncate">{formatEuro(totalReturn, true)} ({returnPercentage >= 0 ? '+' : ''}{returnPercentage.toFixed(2)}%)</p>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-purple-50 via-indigo-50 to-white">
+            <CardContent className="relative p-4 z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm font-medium">Posizioni Attive</p>
-                  <p className="text-2xl font-bold">{investments?.length || 0}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <PieChart className="w-3 h-3" />
-                    <span className="text-xs text-purple-100">Diversificato</span>
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg flex-shrink-0">
+                    <Target className="w-4 h-4 text-white" />
                   </div>
-                </div>
-                <div className="p-3 bg-white/20 rounded-full">
-                  <Target className="h-6 w-6" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-purple-800 mb-1 uppercase truncate">Posizioni Attive</p>
+                    <p className="text-lg md:text-xl font-black text-purple-700 truncate">{investments?.length || 0}</p>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-orange-50 via-red-50 to-white">
+            <CardContent className="relative p-4 z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm font-medium">Portafoglio Attivo</p>
-                  <p className="text-2xl font-bold">{formatEuro(totalPortfolioValue)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <BarChart3 className="w-3 h-3" />
-                    <span className="text-xs text-orange-100">Investimenti attivi</span>
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="p-2.5 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg flex-shrink-0">
+                    <PieChart className="w-4 h-4 text-white" />
                   </div>
-                </div>
-                <div className="p-3 bg-white/20 rounded-full">
-                  <PieChart className="h-6 w-6" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-orange-800 mb-1 uppercase truncate">Portafoglio Attivo</p>
+                    <p className="text-lg md:text-xl font-black text-orange-700 truncate">{formatEuro(totalPortfolioValue)}</p>
+                  </div>
                 </div>
               </div>
             </CardContent>

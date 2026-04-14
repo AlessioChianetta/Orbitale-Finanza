@@ -400,11 +400,11 @@ export default function AccountArchitectureNew() {
   // Mostra lo spinner se stiamo caricando O se stiamo reindirizzando.
   if (archLoading || customLoading || isRedirecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 text-lg">
-            {isRedirecting ? 'Reindirizzamento in corso...' : 'Caricamento dei dati...'}
+          <p className="text-gray-600">
+            {isRedirecting ? 'Reindirizzamento in corso...' : 'Caricamento...'}
           </p>
         </div>
       </div>
@@ -415,7 +415,7 @@ export default function AccountArchitectureNew() {
   // invece di continuare con il rendering (fallback di sicurezza)
   if (!architecture) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center text-center">
           <div className="p-4 bg-red-100 rounded-full mb-4">
             <AlertTriangle className="w-8 h-8 text-red-600" />
@@ -444,8 +444,8 @@ export default function AccountArchitectureNew() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Configuration Card - Always Visible */}
         <div className="mb-6">
           <Card className={missingAccounts.length > 0 ? "border-orange-200 bg-orange-50" : "border-blue-200 bg-blue-50"}>
@@ -509,33 +509,49 @@ export default function AccountArchitectureNew() {
           </Card>
         </div>
 
-        {/* Header */}
+        {/* Dark Hero Header */}
         <div className="mb-6 md:mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
-                Architettura dei Conti
-              </h1>
-              <p className="text-gray-600 text-base md:text-lg">
-                Gestisci i tuoi 6 conti standard e crea conti personalizzati per ogni esigenza
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 sm:space-x-3">
-              <Button
-                onClick={() => setLocation('/account-architecture-setup')}
-                variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50 mobile-button-scale"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Riconfigura
-              </Button>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg mobile-button-scale"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nuovo Conto
-              </Button>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                      <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Architettura dei Conti</h1>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                          <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Gestione Conti</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Gestisci i tuoi 6 conti standard e crea conti personalizzati per ogni esigenza</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:space-x-3 flex-shrink-0">
+                    <Button
+                      onClick={() => setLocation('/account-architecture-setup')}
+                      variant="outline"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 mobile-button-scale"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Riconfigura
+                    </Button>
+                    <Button
+                      onClick={() => setShowCreateDialog(true)}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg mobile-button-scale"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuovo Conto
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -556,7 +572,7 @@ export default function AccountArchitectureNew() {
               return (
                 <Card
                   key={key}
-                  className={`hover:shadow-xl transition-all duration-300 border-0 overflow-hidden group cursor-pointer ${isMissing ? 'border-l-4 border-l-orange-400' : ''}`}
+                  className={`hover:shadow-xl transition-all duration-300 border-0 shadow-lg overflow-hidden group cursor-pointer ${isMissing ? 'border-l-4 border-l-orange-400' : ''}`}
                   onClick={() => setSelectedAccount(selectedAccount === key ? null : key)}
                 >
                   <div className={`h-2 bg-gradient-to-r ${account.gradient}`}></div>
@@ -753,7 +769,7 @@ export default function AccountArchitectureNew() {
                 return (
                   <Card
                     key={account.id}
-                    className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden group"
+                    className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg overflow-hidden group"
                   >
                     <div
                       className="h-2"

@@ -512,9 +512,10 @@ export default function AccountArchitecture() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -523,28 +524,33 @@ export default function AccountArchitecture() {
   // If there's no architecture or forceSetup is true, show the setup wizard
   if (!architecture || forceSetup) {
     return (
-      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="mb-6 sm:mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 sm:p-6 text-white">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="flex-shrink-0">
-                <Building2 className="h-8 w-8 sm:h-10 sm:w-10" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                      <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Architettura dei Conti Intelligente</h1>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                          <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Configurazione Guidata</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Il Sistema Operativo Finanziario - Trasforma il tuo flusso di denaro in canali intelligenti</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1">
-                <h1 className="text-xl sm:text-2xl font-bold">Architettura dei Conti Intelligente</h1>
-                <p className="mt-1 text-blue-100 text-sm sm:text-base">
-                  Il Sistema Operativo Finanziario - Trasforma il tuo flusso di denaro in canali intelligenti
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 sm:gap-4 mt-4">
-              <Badge variant="secondary" className="bg-blue-800 text-blue-100 text-xs">
-                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                Modulo 6
-              </Badge>
-              <Badge variant="secondary" className="bg-purple-800 text-purple-100 text-xs">
-                6 Conti Standard
-              </Badge>
             </div>
           </div>
         </div>
@@ -601,6 +607,7 @@ export default function AccountArchitecture() {
           onCancel={architecture ? () => setForceSetup(false) : undefined}
           existingArchitecture={architecture}
         />
+      </div>
       </div>
     );
   }
@@ -1995,22 +2002,32 @@ function PatrimonyDashboard({
   const totalWealth = Object.values(architecture.accounts || {}).reduce((sum, account) => sum + (account?.balance || 0), 0);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                <Building2 className="h-10 w-10" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Architettura dei Conti Intelligente</h1>
-                <p className="mt-1 text-blue-100">
-                  Il Sistema Operativo Finanziario - Trasforma il tuo flusso di denaro in canali intelligenti
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                    <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                      <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Architettura dei Conti Intelligente</h1>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                        <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Il Sistema Operativo Finanziario</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Trasforma il tuo flusso di denaro in canali intelligenti</p>
+                </div>
+                <div className="flex items-center space-x-3 flex-shrink-0">
               <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -2127,20 +2144,9 @@ function PatrimonyDashboard({
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {resetArchitectureMutation.isPending ? 'Resettando...' : 'Riconfigura'}
               </Button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex space-x-4 mt-4">
-            <Badge variant="secondary" className="bg-blue-800 text-blue-100">
-              <BookOpen className="h-4 w-4 mr-1" />
-              Modulo 6
-            </Badge>
-            <Badge variant="secondary" className="bg-purple-800 text-purple-100">
-              6 Conti Standard
-            </Badge>
-            <Badge variant="secondary" className="bg-green-800 text-green-100">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Configurato
-            </Badge>
           </div>
         </div>
       </div>
@@ -2317,6 +2323,7 @@ function PatrimonyDashboard({
               </Card>
             )}
         </div>
+      </div>
     </div>
   );
 }

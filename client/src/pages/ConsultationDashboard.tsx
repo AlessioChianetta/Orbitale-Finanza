@@ -88,79 +88,113 @@ export default function ConsultationDashboard() {
 
   if (statsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6">
       {/* Header */}
-      <div className="border-b border-gray-200 pb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Consulenze</h1>
-        <p className="text-gray-600 mt-1">Panoramica delle tue attività di consulenza</p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                  <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Dashboard Consulenze</h1>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                      <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Panoramica attiva</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Panoramica delle tue attività di consulenza</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Clienti Attivi</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">
-              {stats?.activeClients || 0}
+        <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-blue-50 via-blue-50 to-white">
+          <CardContent className="relative p-4 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-blue-800 mb-1 uppercase truncate">Clienti Attivi</p>
+                  <p className="text-lg md:text-xl font-black text-blue-700 truncate">{stats?.activeClients || 0}</p>
+                  <p className="text-xs text-blue-600">di {stats?.totalClients || 0} totali</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-blue-700">
-              di {stats?.totalClients || 0} totali
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Consulenze Oggi</CardTitle>
-            <Calendar className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">
-              {stats?.consultationsToday || 0}
+        <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-green-50 via-green-50 to-white">
+          <CardContent className="relative p-4 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="p-2.5 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-green-800 mb-1 uppercase truncate">Consulenze Oggi</p>
+                  <p className="text-lg md:text-xl font-black text-green-700 truncate">{stats?.consultationsToday || 0}</p>
+                  <p className="text-xs text-green-600">{stats?.consultationsThisWeek || 0} questa settimana</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-green-700">
-              {stats?.consultationsThisWeek || 0} questa settimana
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">Esercizi Attivi</CardTitle>
-            <BookOpen className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
-              {stats?.activeExercises || 0}
+        <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-purple-50 via-purple-50 to-white">
+          <CardContent className="relative p-4 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg flex-shrink-0">
+                  <BookOpen className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-purple-800 mb-1 uppercase truncate">Esercizi Attivi</p>
+                  <p className="text-lg md:text-xl font-black text-purple-700 truncate">{stats?.activeExercises || 0}</p>
+                  <p className="text-xs text-purple-600">{stats?.completedExercisesThisWeek || 0} completati</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-purple-700">
-              {stats?.completedExercisesThisWeek || 0} completati questa settimana
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-800">Soddisfazione Media</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-900">
-              {stats?.avgClientSatisfaction ? `${stats.avgClientSatisfaction.toFixed(1)}/5` : 'N/A'}
+        <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-orange-50 via-orange-50 to-white">
+          <CardContent className="relative p-4 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="p-2.5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg flex-shrink-0">
+                  <TrendingUp className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-orange-800 mb-1 uppercase truncate">Soddisfazione</p>
+                  <p className="text-lg md:text-xl font-black text-orange-700 truncate">{stats?.avgClientSatisfaction ? `${stats.avgClientSatisfaction.toFixed(1)}/5` : 'N/A'}</p>
+                  <p className="text-xs text-orange-600">{stats?.followUpRequired || 0} follow-up</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-orange-700">
-              {stats?.followUpRequired || 0} follow-up richiesti
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -168,7 +202,7 @@ export default function ConsultationDashboard() {
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Consultations */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="w-5 h-5 mr-2 text-blue-600" />
@@ -227,7 +261,7 @@ export default function ConsultationDashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card>
+        <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
@@ -279,6 +313,7 @@ export default function ConsultationDashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

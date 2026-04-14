@@ -213,17 +213,10 @@ export default function Dashboard() {
 
   if (isLoading || isDashboardLoading) {
     return (
-      <div className="min-h-screen bg-soft-gray">
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-32 bg-gray-200 rounded-2xl"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -232,7 +225,7 @@ export default function Dashboard() {
   // Welcome screen for new users who haven't completed registration
   if (!hasCompletedRegistration) {
     return (
-      <div className="min-h-screen bg-soft-gray">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
           <Card className="max-w-2xl w-full text-center p-8">
             <CardContent>
@@ -274,7 +267,7 @@ export default function Dashboard() {
 
   if (!dashboardData) {
     return (
-      <div className="min-h-screen bg-soft-gray">
+      <div className="min-h-screen bg-gray-50">
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="text-center p-8">
@@ -319,38 +312,49 @@ export default function Dashboard() {
   const hasCompletedCheckup = getModuleStatus('checkup') === 'completed';
 
   return (
-    <div className="min-h-screen bg-soft-gray">
+    <div className="min-h-screen bg-gray-50">
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Welcome Section - Mobile Optimized */}
-        <div className="mb-6 sm:mb-8">
-          <div className="bg-gradient-to-r from-blue-700 to-blue-800 rounded-xl sm:rounded-2xl p-4 sm:p-8 text-white shadow-lg">
-            <h2 className="text-xl sm:text-3xl font-bold mb-2 text-white" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.5)'}}>Ciao, benvenuto nel tuo futuro!</h2>
-            <p className="text-white text-sm sm:text-lg mb-4 sm:mb-6" style={{textShadow: '1px 1px 3px rgba(0,0,0,0.5)'}}>
-              {hasCompletedCheckup 
-                ? "Ecco il tuo report finanziario aggiornato. Continua a costruire il tuo futuro!" 
-                : "Iniziamo insieme un percorso per prendere il controllo del tuo futuro finanziario."}
-            </p>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              {!hasCompletedCheckup ? (
-                <>
-                  <Button 
-                    className="w-full sm:w-auto bg-white text-trust-blue px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors touch-target"
-                    onClick={() => window.location.href = "/checkup"}
-                  >
-                    Inizia il Check-up Gratuito
-                  </Button>
-                  <div className="flex items-center space-x-2 text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.4)'}}>
-                    <span>⏱️</span>
-                    <span className="text-sm">Solo 15 minuti</span>
+        {/* Dark Hero Header */}
+        <div className="relative mb-6 sm:mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                    <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Ciao, benvenuto nel tuo futuro!</h1>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                        <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">
+                          {hasCompletedCheckup ? "Check-up completato" : "Percorso in corso"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </>
-              ) : (
-                <div className="flex items-center space-x-2 text-white">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.4)'}}>Check-up completato</span>
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">
+                    {hasCompletedCheckup 
+                      ? "Ecco il tuo report finanziario aggiornato. Continua a costruire il tuo futuro!" 
+                      : "Iniziamo insieme un percorso per prendere il controllo del tuo futuro finanziario."}
+                  </p>
                 </div>
-              )}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  {!hasCompletedCheckup ? (
+                    <Button 
+                      className="w-full sm:w-auto bg-white text-slate-900 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                      onClick={() => window.location.href = "/checkup"}
+                    >
+                      Inizia il Check-up Gratuito
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -359,205 +363,199 @@ export default function Dashboard() {
           <>
             {/* Progress Overview - Mobile Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-              <Card className="p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold text-dark-gray">Patrimonio Netto</h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Info className="w-4 h-4 text-medium-gray" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Patrimonio Netto - Come viene calcolato</DialogTitle>
-                          <DialogDescription className="space-y-3">
-                            <p><strong>Formula:</strong> Asset + Investimenti - Passività</p>
-                            <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
-                              <p><strong>Asset:</strong> {formatEuro(financialSummary.totalAssets)} (case, conti correnti, investimenti fissi)</p>
-                              <p><strong>+ Investimenti da transazioni:</strong> {formatEuro(financialSummary.totalInvestments)} (ETF, azioni acquistate)</p>
-                              <p><strong>- Passività:</strong> {formatEuro(financialSummary.totalLiabilities)} (debiti, mutui, prestiti)</p>
-                              <hr className="my-2" />
-                              <p><strong>= Patrimonio Netto:</strong> {formatEuro(financialSummary.netWorth)}</p>
-                            </div>
-                            <p className="text-sm text-medium-gray">
-                              Il patrimonio netto rappresenta il tuo valore finanziario totale. 
-                              Gli investimenti non lo riducono, spostano solo denaro da liquidità a investimenti.
-                            </p>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
+              <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-green-50 via-emerald-50 to-white">
+                <CardContent className="relative p-4 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg flex-shrink-0">
+                        <TrendingUp className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <p className="text-xs font-bold text-green-800 mb-1 uppercase truncate">Patrimonio Netto</p>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+                                <Info className="w-3 h-3 text-green-600" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Patrimonio Netto - Come viene calcolato</DialogTitle>
+                                <DialogDescription className="space-y-3">
+                                  <p><strong>Formula:</strong> Asset + Investimenti - Passività</p>
+                                  <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
+                                    <p><strong>Asset:</strong> {formatEuro(financialSummary.totalAssets)} (case, conti correnti, investimenti fissi)</p>
+                                    <p><strong>+ Investimenti da transazioni:</strong> {formatEuro(financialSummary.totalInvestments)} (ETF, azioni acquistate)</p>
+                                    <p><strong>- Passività:</strong> {formatEuro(financialSummary.totalLiabilities)} (debiti, mutui, prestiti)</p>
+                                    <hr className="my-2" />
+                                    <p><strong>= Patrimonio Netto:</strong> {formatEuro(financialSummary.netWorth)}</p>
+                                  </div>
+                                  <p className="text-sm text-medium-gray">
+                                    Il patrimonio netto rappresenta il tuo valore finanziario totale. 
+                                    Gli investimenti non lo riducono, spostano solo denaro da liquidità a investimenti.
+                                  </p>
+                                </DialogDescription>
+                              </DialogHeader>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        <p className="text-lg md:text-xl font-black text-green-700 truncate">{formatEuro(financialSummary.netWorth)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <TrendingUp className="w-5 h-5 text-growth-green" />
-                </div>
-                <div className="text-3xl font-bold text-dark-gray mb-2">
-                  {formatEuro(financialSummary.netWorth)}
-                </div>
-                <p className="text-sm text-medium-gray">Valore totale asset - passività</p>
-                <div className="mt-4 flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-growth-green rounded-full"></div>
-                  <span className="text-sm text-growth-green">Patrimonio consolidato</span>
-                </div>
+                </CardContent>
               </Card>
 
-              <Card className="p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold text-dark-gray">Liquidità Disponibile</h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Info className="w-4 h-4 text-medium-gray" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Liquidità Disponibile - Come viene calcolata</DialogTitle>
-                          <DialogDescription className="space-y-3">
-                            <p><strong>Formula:</strong> Entrate - Spese - Investimenti</p>
-                            <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
-                              <p><strong>Entrate totali:</strong> {formatEuro(financialSummary.availableLiquidity >= 0 ? Math.abs(financialSummary.availableLiquidity) : 0)} (stipendi, bonus, rendite)</p>
-                              <p><strong>- Spese totali:</strong> {formatEuro(0)} (cibo, casa, trasporti, etc.)</p>
-                              <p><strong>- Investimenti:</strong> {formatEuro(financialSummary.totalInvestments)} (ETF, azioni, etc.)</p>
-                              <hr className="my-2" />
-                              <p><strong>= Liquidità Disponibile:</strong> {formatEuro(financialSummary.availableLiquidity)}</p>
-                            </div>
-                            <p className="text-sm text-medium-gray">
-                              La liquidità rappresenta il denaro che puoi spendere subito. 
-                              Se negativa, significa che hai speso/investito più di quanto hai guadagnato.
-                            </p>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
+              <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-blue-50 via-sky-50 to-white">
+                <CardContent className="relative p-4 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="p-2.5 bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl shadow-lg flex-shrink-0">
+                        <DollarSign className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <p className="text-xs font-bold text-blue-800 mb-1 uppercase truncate">Liquidità Disponibile</p>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+                                <Info className="w-3 h-3 text-blue-600" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Liquidità Disponibile - Come viene calcolata</DialogTitle>
+                                <DialogDescription className="space-y-3">
+                                  <p><strong>Formula:</strong> Entrate - Spese - Investimenti</p>
+                                  <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
+                                    <p><strong>Entrate totali:</strong> {formatEuro(financialSummary.availableLiquidity >= 0 ? Math.abs(financialSummary.availableLiquidity) : 0)} (stipendi, bonus, rendite)</p>
+                                    <p><strong>- Spese totali:</strong> {formatEuro(0)} (cibo, casa, trasporti, etc.)</p>
+                                    <p><strong>- Investimenti:</strong> {formatEuro(financialSummary.totalInvestments)} (ETF, azioni, etc.)</p>
+                                    <hr className="my-2" />
+                                    <p><strong>= Liquidità Disponibile:</strong> {formatEuro(financialSummary.availableLiquidity)}</p>
+                                  </div>
+                                  <p className="text-sm text-medium-gray">
+                                    La liquidità rappresenta il denaro che puoi spendere subito. 
+                                    Se negativa, significa che hai speso/investito più di quanto hai guadagnato.
+                                  </p>
+                                </DialogDescription>
+                              </DialogHeader>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        <p className="text-lg md:text-xl font-black text-blue-700 truncate">{formatEuro(financialSummary.availableLiquidity)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <DollarSign className="w-5 h-5 text-trust-blue" />
-                </div>
-                <div className="text-3xl font-bold text-dark-gray mb-2">
-                  {formatEuro(financialSummary.availableLiquidity)}
-                </div>
-                <p className="text-sm text-medium-gray">Denaro disponibile subito</p>
-                <div className="mt-4 flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${financialSummary.availableLiquidity >= 0 ? 'bg-trust-blue' : 'bg-red-500'}`}></div>
-                  <span className={`text-sm ${financialSummary.availableLiquidity >= 0 ? 'text-trust-blue' : 'text-red-500'}`}>
-                    {financialSummary.availableLiquidity >= 0 ? 'Liquidità positiva' : 'Liquidità negativa'}
-                  </span>
-                </div>
+                </CardContent>
               </Card>
 
-              <Card className="p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold text-dark-gray">Investimenti</h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Info className="w-4 h-4 text-medium-gray" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Investimenti - Come vengono tracciati</DialogTitle>
-                          <DialogDescription className="space-y-3">
-                            <p><strong>Cosa include:</strong> Solo investimenti da transazioni</p>
-                            <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
-                              <p><strong>Transazioni di tipo "Investimento":</strong> {formatEuro(financialSummary.totalInvestments)}</p>
-                              <p className="text-xs text-gray-600">
-                                Include: ETF, azioni, obbligazioni, crypto acquistati tramite transazioni
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                Esclude: Asset fissi inseriti nel check-up (case, conti deposito, etc.)
-                              </p>
-                            </div>
-                            <p className="text-sm text-medium-gray">
-                              Questo valore rappresenta solo il capitale che hai destinato agli investimenti 
-                              attraverso le transazioni registrate. Gli asset fissi sono conteggiati separatamente 
-                              nel patrimonio netto.
-                            </p>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
+              <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-purple-50 via-violet-50 to-white">
+                <CardContent className="relative p-4 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl shadow-lg flex-shrink-0">
+                        <TrendingUp className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <p className="text-xs font-bold text-purple-800 mb-1 uppercase truncate">Investimenti</p>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+                                <Info className="w-3 h-3 text-purple-600" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Investimenti - Come vengono tracciati</DialogTitle>
+                                <DialogDescription className="space-y-3">
+                                  <p><strong>Cosa include:</strong> Solo investimenti da transazioni</p>
+                                  <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
+                                    <p><strong>Transazioni di tipo "Investimento":</strong> {formatEuro(financialSummary.totalInvestments)}</p>
+                                    <p className="text-xs text-gray-600">
+                                      Include: ETF, azioni, obbligazioni, crypto acquistati tramite transazioni
+                                    </p>
+                                    <p className="text-xs text-gray-600">
+                                      Esclude: Asset fissi inseriti nel check-up (case, conti deposito, etc.)
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-medium-gray">
+                                    Questo valore rappresenta solo il capitale che hai destinato agli investimenti 
+                                    attraverso le transazioni registrate. Gli asset fissi sono conteggiati separatamente 
+                                    nel patrimonio netto.
+                                  </p>
+                                </DialogDescription>
+                              </DialogHeader>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        <p className="text-lg md:text-xl font-black text-purple-700 truncate">{formatEuro(financialSummary.totalInvestments)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                </div>
-                <div className="text-3xl font-bold text-dark-gray mb-2">
-                  {formatEuro(financialSummary.totalInvestments)}
-                </div>
-                <p className="text-sm text-medium-gray">Capitale investito da transazioni</p>
-                <div className="mt-4 flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
-                  <span className="text-sm text-purple-600">Portfolio attivo</span>
-                </div>
+                </CardContent>
               </Card>
 
-              <Card className="p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold text-dark-gray">Flusso Mensile</h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Info className="w-4 h-4 text-medium-gray" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Flusso di Cassa Mensile - Come viene calcolato</DialogTitle>
-                          <DialogDescription className="space-y-3">
-                            <p><strong>Formula:</strong> Entrate Ricorrenti - Spese Ricorrenti</p>
-                            <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
-                              <p><strong>Entrate mensili attive:</strong> {formatEuro(monthlyIncome)} (stipendi, pensioni, affitti)</p>
-                              <p><strong>- Spese mensili ricorrenti:</strong> {formatEuro(monthlyRecurringExpenses)} (abbonamenti attivi)</p>
-                              <div className="border-t pt-2 mt-2">
-                                <p><strong>= Flusso Mensile Disponibile:</strong> {formatEuro(availableMonthlyFlow, true)}</p>
-                              </div>
-                            </div>
-                            <p className="text-sm text-medium-gray">
-                              Questo calcolo esclude le transazioni una tantum e si basa solo su entrate 
-                              e spese ricorrenti. Rappresenta quanto denaro generi ogni mese.
-                            </p>
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
+              <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-indigo-50 via-slate-50 to-white">
+                <CardContent className="relative p-4 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-slate-600 rounded-xl shadow-lg flex-shrink-0">
+                        <ArrowRight className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <p className="text-xs font-bold text-indigo-800 mb-1 uppercase truncate">Flusso Mensile</p>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+                                <Info className="w-3 h-3 text-indigo-600" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Flusso di Cassa Mensile - Come viene calcolato</DialogTitle>
+                                <DialogDescription className="space-y-3">
+                                  <p><strong>Formula:</strong> Entrate Ricorrenti - Spese Ricorrenti</p>
+                                  <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
+                                    <p><strong>Entrate mensili attive:</strong> {formatEuro(monthlyIncome)} (stipendi, pensioni, affitti)</p>
+                                    <p><strong>- Spese mensili ricorrenti:</strong> {formatEuro(monthlyRecurringExpenses)} (abbonamenti attivi)</p>
+                                    <div className="border-t pt-2 mt-2">
+                                      <p><strong>= Flusso Mensile Disponibile:</strong> {formatEuro(availableMonthlyFlow, true)}</p>
+                                    </div>
+                                  </div>
+                                  <p className="text-sm text-medium-gray">
+                                    Questo calcolo esclude le transazioni una tantum e si basa solo su entrate 
+                                    e spese ricorrenti. Rappresenta quanto denaro generi ogni mese.
+                                  </p>
+                                </DialogDescription>
+                              </DialogHeader>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        <p className="text-lg md:text-xl font-black text-indigo-700 truncate">{formatEuro(availableMonthlyFlow, true)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-medium-gray" />
-                </div>
-                <div className="text-3xl font-bold text-dark-gray mb-2">
-                  {formatEuro(availableMonthlyFlow, true)}
-                </div>
-                <p className="text-sm text-medium-gray">Dopo spese fisse: {formatEuro(monthlyRecurringExpenses)}</p>
-                <div className="mt-4">
-                  <Progress 
-                    value={Math.max(0, Math.min(100, (availableMonthlyFlow / monthlyIncome) * 100))} 
-                    className="h-2"
-                  />
-                  <p className="text-xs text-medium-gray mt-1">
-                    {Math.round((availableMonthlyFlow / monthlyIncome) * 100)}% disponibile
-                  </p>
-                </div>
+                </CardContent>
               </Card>
 
-              <Card className="p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-dark-gray">Obiettivi Attivi</h3>
-                  <Target className="w-5 h-5 text-amber-500" />
-                </div>
-                <div className="text-3xl font-bold text-dark-gray mb-2">{goals.length}</div>
-                <p className="text-sm text-medium-gray">In corso di realizzazione</p>
-                <div className="mt-4 flex space-x-1">
-                  {[1, 2, 3].map((i) => (
-                    <div 
-                      key={i}
-                      className={`w-3 h-3 rounded-full ${
-                        i <= goals.length ? 'bg-growth-green' : 'bg-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
+              <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-gradient-to-br from-amber-50 via-orange-50 to-white">
+                <CardContent className="relative p-4 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg flex-shrink-0">
+                        <Target className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-amber-800 mb-1 uppercase truncate">Obiettivi Attivi</p>
+                        <p className="text-lg md:text-xl font-black text-amber-700 truncate">{goals.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             </div>
 
@@ -566,13 +564,13 @@ export default function Dashboard() {
               {/* Left Column - Charts */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Portfolio Composition Chart */}
-                <Card className="p-6 shadow-sm">
+                <Card className="p-6 border-0 shadow-lg rounded-2xl bg-white">
                   <h3 className="text-lg font-semibold text-dark-gray mb-6">Composizione Patrimonio</h3>
                   <Charts assetsByType={assetsByType} />
                 </Card>
 
                 {/* Goals Progress */}
-                <Card className="p-6 shadow-sm">
+                <Card className="p-6 border-0 shadow-lg rounded-2xl bg-white">
                   <h3 className="text-lg font-semibold text-dark-gray mb-6">I Tuoi Obiettivi</h3>
                   <div className="space-y-6">
                     {goals.length === 0 ? (
@@ -599,7 +597,7 @@ export default function Dashboard() {
               <div className="space-y-6">
                 {/* Recurring Subscriptions Management */}
                 {activeRecurringTransactions.length > 0 && (
-                  <Card className="p-6 shadow-sm">
+                  <Card className="p-6 border-0 shadow-lg rounded-2xl bg-white">
                     <h3 className="text-lg font-semibold text-dark-gray mb-4">Abbonamenti Attivi</h3>
                     <div className="space-y-3">
                       {activeRecurringTransactions.map((subscription: any) => (
@@ -616,7 +614,7 @@ export default function Dashboard() {
                 )}
 
                 {/* Quick Actions */}
-                <Card className="p-6 shadow-sm">
+                <Card className="p-6 border-0 shadow-lg rounded-2xl bg-white">
                   <h3 className="text-lg font-semibold text-dark-gray mb-4">Azioni Rapide</h3>
                   <div className="space-y-3">
                     <Button 
@@ -644,7 +642,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Module Status */}
-                <Card className="p-6 shadow-sm">
+                <Card className="p-6 border-0 shadow-lg rounded-2xl bg-white">
                   <h3 className="text-lg font-semibold text-dark-gray mb-4">I Tuoi Moduli</h3>
                   <div className="space-y-4">
                     {/* Module 1 - Checkup */}
@@ -698,7 +696,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Achievement Badges */}
-                <Card className="p-6 shadow-sm">
+                <Card className="p-6 border-0 shadow-lg rounded-2xl bg-white">
                   <h3 className="text-lg font-semibold text-dark-gray mb-4">I Tuoi Traguardi</h3>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="text-center">
@@ -727,7 +725,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Educational Tip */}
-                <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-6">
+                <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-6 border-0 shadow-lg rounded-2xl">
                   <div className="flex items-start space-x-3">
                     <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0">
                       <Lightbulb className="w-4 h-4" />
@@ -752,7 +750,7 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity */}
-            <Card className="mt-8 p-6 shadow-sm">
+            <Card className="mt-8 p-6 border-0 shadow-lg rounded-2xl bg-white">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-dark-gray">Attività Recente</h3>
                 <Button variant="ghost" size="sm" className="text-trust-blue hover:text-blue-700">
@@ -798,7 +796,7 @@ export default function Dashboard() {
                     const amount = safeFloat(transaction.amount);
                     
                     return (
-                      <div key={transaction.id} className="flex items-center space-x-4 p-3 hover:bg-soft-gray rounded-lg transition-colors">
+                      <div key={transaction.id} className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getIconColor(transaction.type, amount)}`}>
                           <Icon className="w-5 h-5" />
                         </div>

@@ -105,10 +105,10 @@ export default function DashboardNew() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Caricamento dashboard...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -161,23 +161,33 @@ export default function DashboardNew() {
   const totalContributions = monthlyInvestment[0] * timeHorizon[0] * 12;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30">
-      <div className="p-4 md:p-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-              Dashboard Finanziaria
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Gestione completa delle tue finanze
-            </p>
-          </div>
-          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full px-4 py-2 shadow-sm">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">
-              Aggiornato: {format(new Date(), 'HH:mm', { locale: it })}
-            </span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6">
+        {/* Dark Hero Header */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                    <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                      <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Dashboard Finanziaria</h1>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                        <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Aggiornato: {format(new Date(), 'HH:mm', { locale: it })}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Gestione completa delle tue finanze</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -186,7 +196,7 @@ export default function DashboardNew() {
           {/* Colonna Sinistra - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Architettura dei Conti */}
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="bg-white border-0 shadow-xl rounded-2xl">
               <CardHeader className="bg-gradient-to-r from-gray-800 via-slate-700 to-gray-800 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3">
                   <div className="bg-white/20 p-2 rounded-full">
@@ -241,8 +251,8 @@ export default function DashboardNew() {
             </Card>
 
             {/* Transazioni del Mese */}
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-white rounded-t-lg p-4 sm:p-6">
+            <Card className="bg-white border-0 shadow-xl rounded-2xl">
+              <CardHeader className="bg-gradient-to-r from-gray-800 via-slate-700 to-gray-800 text-white rounded-t-lg p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                   <CardTitle className="flex items-center gap-2 sm:gap-3">
                     <div className="bg-white/20 p-1.5 sm:p-2 rounded-full flex-shrink-0">
@@ -250,7 +260,7 @@ export default function DashboardNew() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-base sm:text-xl font-bold truncate">Transazioni del Mese</h3>
-                      <p className="text-xs sm:text-sm text-blue-100">
+                      <p className="text-xs sm:text-sm text-gray-200">
                         {monthlyTransactions.length} operazioni
                       </p>
                     </div>
@@ -329,15 +339,15 @@ export default function DashboardNew() {
             </Card>
 
             {/* Budget vs Reale */}
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white rounded-t-lg">
+            <Card className="bg-white border-0 shadow-xl rounded-2xl">
+              <CardHeader className="bg-gradient-to-r from-gray-800 via-slate-700 to-gray-800 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3">
                   <div className="bg-white/20 p-2 rounded-full">
                     <Target className="h-6 w-6" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">Budget vs Reale</h3>
-                    <p className="text-sm text-pink-100">Confronto previsionale e spese effettive</p>
+                    <p className="text-sm text-gray-200">Confronto previsionale e spese effettive</p>
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -389,8 +399,8 @@ export default function DashboardNew() {
           {/* Colonna Destra - 1/3 */}
           <div className="space-y-6">
             {/* Simulatore */}
-            <Card className="bg-gradient-to-br from-white via-orange-50/30 to-amber-50/30 border-0 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-t-lg">
+            <Card className="bg-white border-0 shadow-xl rounded-2xl">
+              <CardHeader className="bg-gradient-to-r from-gray-800 via-slate-700 to-gray-800 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-3">
                   <div className="bg-white/20 p-2 rounded-full">
                     <Calculator className="h-6 w-6" />
@@ -474,7 +484,7 @@ export default function DashboardNew() {
             </Card>
 
             {/* Spese per Categoria */}
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="bg-white border-0 shadow-lg rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-gray-900">Top Categorie di Spesa</CardTitle>
               </CardHeader>

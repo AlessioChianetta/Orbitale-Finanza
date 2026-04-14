@@ -214,14 +214,10 @@ export default function CourseViewer({ courseId }: CourseViewerProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-300 rounded w-1/3"></div>
-            <div className="aspect-video bg-gray-300 rounded"></div>
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
@@ -229,10 +225,10 @@ export default function CourseViewer({ courseId }: CourseViewerProps) {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50">
         
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <Card>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <Card className="border-0 shadow-lg">
             <CardContent className="p-8 text-center">
               <h3 className="text-lg font-medium mb-2">Corso non trovato</h3>
               <p className="text-muted-foreground">Il corso richiesto non esiste o non è disponibile.</p>
@@ -244,28 +240,43 @@ export default function CourseViewer({ courseId }: CourseViewerProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Course Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold">{course.title}</h1>
-              <div className="flex items-center gap-4 mt-2">
-                <Badge variant="outline">{course.level}</Badge>
-                <span className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {course.estimatedDuration} minuti
-                </span>
-              </div>
-            </div>
-            
-            <div className="text-right">
-              <div className="text-sm text-muted-foreground mb-1">Progresso del corso</div>
-              <div className="flex items-center gap-2">
-                <Progress value={progressPercentage} className="w-32" />
-                <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                      <div className="p-2 sm:p-3 bg-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                        <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">{course.title}</h1>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge variant="outline" className="border-white/30 text-white text-xs">{course.level}</Badge>
+                          <span className="text-gray-300 text-xs sm:text-sm flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {course.estimatedDuration} min
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className="text-sm text-gray-300 mb-1">Progresso</div>
+                    <div className="flex items-center gap-2">
+                      <Progress value={progressPercentage} className="w-32" />
+                      <span className="text-sm font-medium text-white">{Math.round(progressPercentage)}%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

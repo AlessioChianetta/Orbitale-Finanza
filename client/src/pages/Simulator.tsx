@@ -184,46 +184,44 @@ export default function Simulator() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 bg-gradient-to-r from-blue-200 to-purple-200 rounded-full"></div>
-              <div className="h-8 bg-gradient-to-r from-blue-200 to-purple-200 rounded w-1/3"></div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-96 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl shadow-lg"></div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl"></div>
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-              <Sparkles className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Dark Hero Header */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-blue-50 rounded-2xl transform -rotate-1 scale-105 opacity-60"></div>
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 rounded-2xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden shadow-2xl border border-gray-200">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-3">
+                    <div className="p-2 sm:p-3 bg-purple-600 rounded-xl shadow-lg flex-shrink-0">
+                      <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg truncate">Simulatore "E se...?"</h1>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg flex-shrink-0"></div>
+                        <span className="text-gray-100 text-xs sm:text-sm font-medium truncate">Interesse Composto</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-200 text-sm sm:text-base leading-relaxed font-medium line-clamp-2">Scopri come piccoli cambiamenti possono trasformare il tuo futuro finanziario con il potere dell'interesse composto</p>
+                </div>
+              </div>
             </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Simulatore "E se...?"
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Scopri come piccoli cambiamenti possono trasformare il tuo futuro finanziario con il potere dell'interesse composto
-          </p>
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
