@@ -612,8 +612,9 @@ export default function Investments() {
         setSearchResults(results);
         setShowSearchResults(true);
       }
-    } catch (error: any) {
-      if (error.name !== 'AbortError') {
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+      } else {
         console.error('Search error:', error);
       }
     } finally {

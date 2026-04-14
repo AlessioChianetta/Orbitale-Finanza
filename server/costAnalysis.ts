@@ -12,6 +12,12 @@ import {
   costNotes
 } from '../shared/schema.js';
 import { eq, and, desc, gte, lte, sum } from 'drizzle-orm';
+
+function safeFloat(value: string | number | null | undefined, fallback: number = 0): number {
+  if (value === null || value === undefined) return fallback;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+}
 import {
   calculateBreakEven,
   saveBreakEvenAnalysis
@@ -60,11 +66,11 @@ router.get('/dashboard', requireAuth, async (req, res) => {
       );
 
     const avgLaborCostPercentage = monthlyAnalysis.actualRevenue > 0 
-      ? (parseFloat(laborCostsData[0]?.totalCost?.toString() || '0') / monthlyAnalysis.actualRevenue) * 100 
+      ? (safeFloat(laborCostsData[0]?.totalCost?.toString()) / monthlyAnalysis.actualRevenue) * 100 
       : 0;
 
-    const avgRevenuePerLaborHour = parseFloat(laborCostsData[0]?.totalHours?.toString() || '0') > 0
-      ? monthlyAnalysis.actualRevenue / parseFloat(laborCostsData[0]?.totalHours?.toString() || '0')
+    const avgRevenuePerLaborHour = safeFloat(laborCostsData[0]?.totalHours?.toString()) > 0
+      ? monthlyAnalysis.actualRevenue / safeFloat(laborCostsData[0]?.totalHours?.toString())
       : 0;
 
     res.json({
@@ -253,7 +259,7 @@ router.post('/labor-costs', requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { date, employeeName, role, hoursWorked, hourlyRate, shift, notes } = req.body;
 
-    const totalCost = parseFloat(hoursWorked) * parseFloat(hourlyRate);
+    const totalCost = safeFloat(hoursWorked) * safeFloat(hourlyRate);
 
     const [newCost] = await db
       .insert(laborCosts)
@@ -636,10 +642,10 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
         contattiTotali: salesConversionDataFromDb[0].contattiTotali || 0,
         nuoviClienti: salesConversionDataFromDb[0].nuoviClienti || 0,
         clientiDaProve: salesConversionDataFromDb[0].clientiDaProve || 0,
-        costoProveGratuite: parseFloat(salesConversionDataFromDb[0].costoProveGratuite?.toString() || '0'),
-        spesaMarketing: parseFloat(salesConversionDataFromDb[0].spesaMarketing?.toString() || '0'),
+        costoProveGratuite: safeFloat(salesConversionDataFromDb[0].costoProveGratuite?.toString()),
+        spesaMarketing: safeFloat(salesConversionDataFromDb[0].spesaMarketing?.toString()),
         numeroTransazioni: salesConversionDataFromDb[0].numeroTransazioni || 0,
-        valoreMedioTransazione: parseFloat(salesConversionDataFromDb[0].valoreMedioTransazione?.toString() || '0')
+        valoreMedioTransazione: safeFloat(salesConversionDataFromDb[0].valoreMedioTransazione?.toString())
       } : {
         contattiTotali: 0,
         nuoviClienti: 0,
@@ -650,11 +656,11 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
         valoreMedioTransazione: 0
       },
       unitVariableCosts: unitVariableCostsFromDb.length > 0 ? {
-        costoMaterialeCliente: parseFloat(unitVariableCostsFromDb[0].costoMaterialeCliente?.toString() || '0'),
-        oreLavoroCliente: parseFloat(unitVariableCostsFromDb[0].oreLavoroCliente?.toString() || '0'),
-        costoOrarioLavoro: parseFloat(unitVariableCostsFromDb[0].costoOrarioLavoro?.toString() || '0'),
-        commissioniTransazione: parseFloat(unitVariableCostsFromDb[0].commissioniTransazione?.toString() || '0'),
-        altriCostiVariabiliUnitari: parseFloat(unitVariableCostsFromDb[0].altriCostiVariabiliUnitari?.toString() || '0')
+        costoMaterialeCliente: safeFloat(unitVariableCostsFromDb[0].costoMaterialeCliente?.toString()),
+        oreLavoroCliente: safeFloat(unitVariableCostsFromDb[0].oreLavoroCliente?.toString()),
+        costoOrarioLavoro: safeFloat(unitVariableCostsFromDb[0].costoOrarioLavoro?.toString()),
+        commissioniTransazione: safeFloat(unitVariableCostsFromDb[0].commissioniTransazione?.toString()),
+        altriCostiVariabiliUnitari: safeFloat(unitVariableCostsFromDb[0].altriCostiVariabiliUnitari?.toString())
       } : {
         costoMaterialeCliente: 0,
         oreLavoroCliente: 0,
@@ -666,7 +672,7 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
 
     // Mappa i costi fissi dal database (solo quelli per il mese richiesto)
     fixedCostsForMonth.forEach((cost: any) => {
-      const amount = parseFloat(cost.monthlyAmount) || 0;
+      const amount = safeFloat(cost.monthlyAmount);
       if (configuration.fixedCosts.hasOwnProperty(cost.name)) {
         (configuration.fixedCosts as any)[cost.name] = amount;
         console.log(`Costo fisso caricato per ${monthKey}: ${cost.name} = ${amount}`);
@@ -679,7 +685,7 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
 
     // Mappa i costi variabili dal database (solo quelli per il mese richiesto)
     variableCostsForMonth.forEach((cost: any) => {
-      const amount = parseFloat(cost.unitCost);
+      const amount = safeFloat(cost.unitCost);
 
       // Se è un debito (categoria 'debt'), mappalo nella sezione debts
       if (cost.category === 'debt' && configuration.debts.hasOwnProperty(cost.name)) {
@@ -699,8 +705,8 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
     // Carica le impostazioni lavoro dal database
     if (laborCostsData.length > 0) {
       const latestLabor = laborCostsData[0];
-      const totalHours = parseFloat(latestLabor.hoursWorked);
-      const hourlyRate = parseFloat(latestLabor.hourlyRate);
+      const totalHours = safeFloat(latestLabor.hoursWorked);
+      const hourlyRate = safeFloat(latestLabor.hourlyRate);
 
       configuration.laborSettings.averageHourlyWage = hourlyRate;
       // Stima giorni e ore basata sui dati salvati

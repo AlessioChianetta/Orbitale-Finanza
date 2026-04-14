@@ -13,6 +13,18 @@ import {
 } from '@shared/schema';
 import { eq, and, gte, lte, sql, sum, avg, count, desc } from 'drizzle-orm';
 
+function safeFloat(value: string | number | null | undefined, fallback: number = 0): number {
+  if (value === null || value === undefined) return fallback;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+}
+
+function toLocalMonthKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
 // Interfacce per i risultati delle analisi
 export interface DailyCostBreakdown {
   date: string;
@@ -46,7 +58,7 @@ export async function getFixedCostsForPeriod(
 ): Promise<number> {
   try {
     // Carica la configurazione salvata dal database
-    const monthKey = startDate.toISOString().slice(0, 7); // Format YYYY-MM
+    const monthKey = toLocalMonthKey(startDate); // Format YYYY-MM
 
     const savedFixedCosts = await db
       .select()
@@ -63,7 +75,7 @@ export async function getFixedCostsForPeriod(
     let monthlyFixedCosts = 0;
     if (savedFixedCosts.length > 0) {
       monthlyFixedCosts = savedFixedCosts.reduce((total, cost) => {
-        const amount = parseFloat(cost.monthlyAmount) || 0;
+        const amount = safeFloat(cost.monthlyAmount);
         return total + amount;
       }, 0);
     } else {
@@ -121,7 +133,7 @@ export async function getVariableCostsForOrders(
 ): Promise<number> {
   try {
     // Carica la configurazione salvata dal database
-    const monthKey = startDate.toISOString().slice(0, 7); // Format YYYY-MM
+    const monthKey = toLocalMonthKey(startDate); // Format YYYY-MM
 
     const savedVariableCosts = await db
       .select()
@@ -155,7 +167,7 @@ export async function getVariableCostsForOrders(
           return total;
         }
 
-        const amount = parseFloat(cost.unitCost) || 0;
+        const amount = safeFloat(cost.unitCost);
         return total + amount;
       }, 0);
     } else {
@@ -190,7 +202,7 @@ export async function getManualRevenueForPeriod(
   endDate: Date
 ): Promise<number> {
   try {
-    const monthKey = startDate.toISOString().slice(0, 7); // Format YYYY-MM
+    const monthKey = toLocalMonthKey(startDate); // Format YYYY-MM
 
     // Verifica se è configurato fatturato manuale per questo mese
     const revenueConfigData = await db
@@ -226,8 +238,8 @@ export async function getManualRevenueForPeriod(
 
     // Calcola il totale dal fatturato manuale
     const total = manualRevenueData.reduce((sum, record) => {
-      const monthlyRev = record.monthlyRevenue ? parseFloat(record.monthlyRevenue) : 0;
-      const dailyRev = record.dailyRevenue ? parseFloat(record.dailyRevenue) : 0;
+      const monthlyRev = record.monthlyRevenue ? safeFloat(record.monthlyRevenue) : 0;
+      const dailyRev = record.dailyRevenue ? safeFloat(record.dailyRevenue) : 0;
       const recordTotal = monthlyRev || dailyRev;
       return sum + recordTotal;
     }, 0);
@@ -768,11 +780,11 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     console.log('📊 [BACKEND DASHBOARD] laborCostsData:', laborCostsData);
 
     const avgLaborCostPercentage = monthlyAnalysis.actualRevenue > 0
-      ? (parseFloat(laborCostsData[0]?.totalCost?.toString() || '0') / monthlyAnalysis.actualRevenue) * 100
+      ? (safeFloat(laborCostsData[0]?.totalCost?.toString()) / monthlyAnalysis.actualRevenue) * 100
       : 0;
 
-    const avgRevenuePerLaborHour = parseFloat(laborCostsData[0]?.totalHours?.toString() || '0') > 0
-      ? monthlyAnalysis.actualRevenue / parseFloat(laborCostsData[0]?.totalHours?.toString() || '0')
+    const avgRevenuePerLaborHour = safeFloat(laborCostsData[0]?.totalHours?.toString()) > 0
+      ? monthlyAnalysis.actualRevenue / safeFloat(laborCostsData[0]?.totalHours?.toString())
       : 0;
 
     const responseData = {
@@ -839,7 +851,7 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
     loadedFixedCosts.forEach(cost => {
       // Tutti i fixedCosts vengono caricati (debiti inclusi nella categoria)
       if (!cost.name.includes('debt_') && cost.category !== 'debt') {
-        fixedCostsObj[cost.name] = parseFloat(cost.monthlyAmount) || 0;
+        fixedCostsObj[cost.name] = safeFloat(cost.monthlyAmount);
       }
     });
 
@@ -848,9 +860,9 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
     loadedVariableCosts.forEach(cost => {
       // Separa labor settings (hourlywage, hoursperweek, weekspermonth) dagli altri costi variabili
       if (['hourlyWage', 'hoursPerWeek', 'weeksPerMonth'].includes(cost.name)) {
-        laborSettingsObj[cost.name] = parseFloat(cost.unitCost) || 0;
+        laborSettingsObj[cost.name] = safeFloat(cost.unitCost);
       } else {
-        advancedCostsObj[cost.name] = parseFloat(cost.unitCost) || 0;
+        advancedCostsObj[cost.name] = safeFloat(cost.unitCost);
       }
     });
 
@@ -858,7 +870,7 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
     loadedFixedCosts.forEach(cost => {
       // I debiti sono identificati dalla categoria o dal prefisso nel nome
       if (cost.name.includes('debt_') || cost.category === 'debt') {
-        debtsObj[cost.name] = parseFloat(cost.monthlyAmount) || 0;
+        debtsObj[cost.name] = safeFloat(cost.monthlyAmount);
       }
     });
 
@@ -880,10 +892,10 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
       contattiTotali: salesData[0].contattiTotali || 0,
       nuoviClienti: salesData[0].nuoviClienti || 0,
       clientiDaProve: salesData[0].clientiDaProve || 0,
-      costoProveGratuite: parseFloat(salesData[0].costoProveGratuite?.toString() || '0'),
-      spesaMarketing: parseFloat(salesData[0].spesaMarketing?.toString() || '0'),
+      costoProveGratuite: safeFloat(salesData[0].costoProveGratuite?.toString()),
+      spesaMarketing: safeFloat(salesData[0].spesaMarketing?.toString()),
       numeroTransazioni: salesData[0].numeroTransazioni || 0,
-      valoreMedioTransazione: parseFloat(salesData[0].valoreMedioTransazione?.toString() || '0')
+      valoreMedioTransazione: safeFloat(salesData[0].valoreMedioTransazione?.toString())
     } : {
       contattiTotali: 0,
       nuoviClienti: 0,
@@ -911,11 +923,11 @@ router.get('/load-configuration', requireAuth, async (req, res) => {
     console.log('📥 [LOAD CONFIG] Unit costs query result:', unitCosts);
 
     const unitVariableCostsObj: any = unitCosts.length > 0 ? {
-      costoMaterialeCliente: parseFloat(unitCosts[0].costoMaterialeCliente?.toString() || '0'),
-      oreLavoroCliente: parseFloat(unitCosts[0].oreLavoroCliente?.toString() || '0'),
-      costoOrarioLavoro: parseFloat(unitCosts[0].costoOrarioLavoro?.toString() || '0'),
-      commissioniTransazione: parseFloat(unitCosts[0].commissioniTransazione?.toString() || '0'),
-      altriCostiVariabiliUnitari: parseFloat(unitCosts[0].altriCostiVariabiliUnitari?.toString() || '0')
+      costoMaterialeCliente: safeFloat(unitCosts[0].costoMaterialeCliente?.toString()),
+      oreLavoroCliente: safeFloat(unitCosts[0].oreLavoroCliente?.toString()),
+      costoOrarioLavoro: safeFloat(unitCosts[0].costoOrarioLavoro?.toString()),
+      commissioniTransazione: safeFloat(unitCosts[0].commissioniTransazione?.toString()),
+      altriCostiVariabiliUnitari: safeFloat(unitCosts[0].altriCostiVariabiliUnitari?.toString())
     } : {
       costoMaterialeCliente: 0,
       oreLavoroCliente: 0,
