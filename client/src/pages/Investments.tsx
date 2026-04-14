@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { safeFloat, safeInt, getLocalDateString } from "@/lib/utils";
+import { safeFloat, safeInt, getLocalDateString, toLocaleDateSafe } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -1823,7 +1823,7 @@ export default function Investments() {
                           
                           {investment.purchaseDate && (
                             <div className="mt-2 text-xs text-gray-500">
-                              Acquistato il: {new Date(investment.purchaseDate).toLocaleDateString('it-IT')}
+                              Acquistato il: {toLocaleDateSafe(investment.purchaseDate)}
                             </div>
                           )}
                         </div>

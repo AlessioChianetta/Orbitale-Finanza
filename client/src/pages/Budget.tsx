@@ -1003,9 +1003,9 @@ function CategoryBudgetManager({
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-sm font-medium text-blue-700">
             <Clock className="w-4 h-4" />
             {timeFilter === 'current-month' && `Periodo: ${new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}`}
-            {timeFilter === 'custom-month' && `Periodo: ${new Date(selectedMonth + '-01').toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}`}
+            {timeFilter === 'custom-month' && (() => { const p = selectedMonth.split('-'); return p.length === 2 ? `Periodo: ${new Date(parseInt(p[0]), parseInt(p[1]) - 1, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}` : `Periodo: ${selectedMonth}`; })()}
             {timeFilter === 'date-range' && selectedDateRange?.start && selectedDateRange?.end && 
-              `Periodo: ${new Date(selectedDateRange.start).toLocaleDateString('it-IT')} - ${new Date(selectedDateRange.end).toLocaleDateString('it-IT')}`
+              `Periodo: ${toLocaleDateSafe(selectedDateRange.start)} - ${toLocaleDateSafe(selectedDateRange.end)}`
             }
           </div>
         </CardHeader>

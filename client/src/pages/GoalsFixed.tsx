@@ -587,7 +587,7 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
   };
 
   const progressPercentage = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
-  const remainingMonths = Math.max(0, Math.ceil((new Date(goal.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30)));
+  const remainingMonths = Math.max(0, (() => { const p = goal.targetDate?.split('-'); if (p?.length === 3) { return Math.ceil((new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30)); } return 0; })());
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -980,7 +980,7 @@ function GoalCard({ goal }: { goal: Goal }) {
   const safeCurrentAmount = safeFloat(goal.currentAmount?.toString());
   const safeTargetAmount = safeFloat(goal.targetAmount?.toString(), 1);
   const progressPercentage = Math.min(100, (safeCurrentAmount / safeTargetAmount) * 100);
-  const remainingMonths = Math.max(0, Math.ceil((new Date(goal.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30)));
+  const remainingMonths = Math.max(0, (() => { const p = goal.targetDate?.split('-'); if (p?.length === 3) { return Math.ceil((new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30)); } return 0; })());
 
   const getGoalIcon = (type: string) => {
     switch (type.toLowerCase()) {
