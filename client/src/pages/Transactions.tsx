@@ -1861,89 +1861,69 @@ function TransactionItem({ transaction }: { transaction: any }) {
   });
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors duration-200 rounded-lg p-2 md:p-3 space-y-2 sm:space-y-0 sm:space-x-3">
-      {/* Mobile: Stack layout, Desktop: Horizontal layout */}
-      <div className="flex items-center space-x-3 flex-1 min-w-0">
-        <div className={`p-2 md:p-3 rounded-lg flex-shrink-0 ${
-          isTransfer ? 'bg-blue-50' : (isPositive ? 'bg-green-50' : 'bg-red-50')
+    <div className="flex items-center justify-between gap-3 py-2.5 group">
+      {/* Left: icon + text */}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          isTransfer ? 'bg-blue-50' : (isPositive ? 'bg-emerald-50' : 'bg-red-50')
         }`}>
-          <Icon className={`w-4 h-4 md:w-5 md:h-5 ${
-            isTransfer ? 'text-blue-600' : (isPositive ? 'text-green-600' : 'text-red-600')
+          <Icon className={`w-4 h-4 ${
+            isTransfer ? 'text-blue-500' : (isPositive ? 'text-emerald-500' : 'text-red-500')
           }`} />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-gray-900 truncate text-sm md:text-base">
-            {isTransfer && transferInfo ?
-              `Giroconto ${transferInfo}` :
-              (transaction.description || transaction.category)
-            }
-          </p>
-          {/* Mobile: Stack tags vertically, Desktop: horizontal */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs md:text-sm text-gray-500 mt-1 space-y-1 sm:space-y-0">
-            <div className="flex items-center space-x-2">
-              <span className="truncate font-medium">
-                {transaction.category}
-                {transaction.subcategory && (
-                  <span className="text-gray-400"> → {transaction.subcategory}</span>
-                )}
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="text-xs">{new Date(transaction.date).toLocaleDateString('it-IT')}</span>
-            </div>
 
-            {/* Tags row */}
-            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-              {isCheckupTxn && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                  Check-up
-                </span>
-              )}
-              {isTransfer && transferInfo && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                  <span className="block truncate max-w-[150px] sm:max-w-[250px]">
-                    {transferInfo}
-                  </span>
-                </span>
-              )}
-              {!isTransfer &&transaction.accountType && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">
-                  <span className="block truncate max-w-[120px] sm:max-w-[200px]">
-                    {getAccountDisplayName(transaction.accountType, accountArchitecture as any, Array.isArray(customAccounts) ? customAccounts : [])}
-                  </span>
-                </span>
-              )}
-            </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-800 truncate leading-tight">
+            {isTransfer && transferInfo
+              ? `Giroconto ${transferInfo}`
+              : (transaction.description || transaction.category)}
+          </p>
+          <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+            {transaction.subcategory && (
+              <span className="text-xs text-gray-400 truncate">{transaction.subcategory}</span>
+            )}
+            <span className="text-xs text-gray-400">
+              {new Date(transaction.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' })}
+            </span>
+            {!isTransfer && transaction.accountType && (
+              <span className="text-xs text-gray-400 truncate max-w-[160px]">
+                {getAccountDisplayName(transaction.accountType, accountArchitecture as any, Array.isArray(customAccounts) ? customAccounts : [])}
+              </span>
+            )}
+            {isCheckupTxn && (
+              <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">Check-up</span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Amount and actions */}
-      <div className="flex items-center justify-between sm:justify-end space-x-3 flex-shrink-0">
-        <div className="text-left sm:text-right">
-          <p className={`font-bold text-base md:text-lg ${
-            displayAmount >= 0 ? 'text-green-600' : 'text-red-600'
+      {/* Right: amount + type tag + menu */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="text-right">
+          <p className={`text-sm font-bold tabular-nums ${
+            displayAmount >= 0 ? 'text-emerald-600' : 'text-red-500'
           }`}>
             {displayAmount >= 0 ? '+' : ''}{formatEuro(displayAmount)}
           </p>
-          <Badge variant="outline" className="text-xs mt-1">
+          <p className="text-xs text-gray-400 mt-0.5">
             {isCheckupTxn ? 'Check-up' : (transactionTypes.find(t => t.value === transaction.type)?.label || transaction.type)}
-          </Badge>
+          </p>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0 touch-target">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-gray-400 hover:text-gray-700">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} className="touch-target">
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Modifica
             </DropdownMenuItem>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="touch-target">
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Elimina
                 </DropdownMenuItem>
