@@ -2565,8 +2565,46 @@ export default function Transactions() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
+  // Compute the date range for the API based on the selected period
+  const { apiStartDate, apiEndDate } = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    switch (selectedPeriod) {
+      case 'today':
+        return { apiStartDate: todayStr, apiEndDate: todayStr };
+      case 'week': {
+        const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return { apiStartDate: start.toISOString().split('T')[0], apiEndDate: todayStr };
+      }
+      case 'month': {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        return { apiStartDate: start.toISOString().split('T')[0], apiEndDate: todayStr };
+      }
+      case 'year': {
+        const start = new Date(now.getFullYear(), 0, 1);
+        return { apiStartDate: start.toISOString().split('T')[0], apiEndDate: todayStr };
+      }
+      case 'custom':
+        if (startDate && endDate) {
+          return { apiStartDate: startDate, apiEndDate: endDate };
+        }
+        return { apiStartDate: undefined, apiEndDate: undefined };
+      default:
+        return { apiStartDate: undefined, apiEndDate: undefined };
+    }
+  }, [selectedPeriod, startDate, endDate]);
+
   const { data: transactions, isLoading } = useQuery<Transaction[]>({
-    queryKey: ['/api/transactions']
+    queryKey: ['/api/transactions', apiStartDate, apiEndDate],
+    queryFn: async () => {
+      const url = (apiStartDate && apiEndDate)
+        ? `/api/transactions?startDate=${apiStartDate}&endDate=${apiEndDate}`
+        : '/api/transactions';
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json();
+    }
   });
 
   const { data: dashboardData } = useQuery({
@@ -2574,47 +2612,8 @@ export default function Transactions() {
     enabled: !isLoading // Only fetch dashboard data if transactions are not loading
   });
 
-  // Filter transactions based on selected period
-  const filteredTransactions = useMemo(() => {
-    // Always use the complete transaction set, not the limited dashboard recent transactions
-    const allTransactions = transactions || [];
-    if (!allTransactions.length) return [];
-
-    const now = new Date();
-    let startDateFilter: Date;
-    let endDateFilter: Date = now;
-
-    switch (selectedPeriod) {
-      case 'today':
-        startDateFilter = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'week':
-        startDateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDateFilter = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDateFilter = new Date(now.getFullYear(), 0, 1);
-        break;
-      case 'custom':
-        if (startDate && endDate) {
-          startDateFilter = new Date(startDate);
-          endDateFilter = new Date(endDate);
-          endDateFilter.setHours(23, 59, 59, 999);
-        } else {
-          return allTransactions;
-        }
-        break;
-      default:
-        return allTransactions;
-    }
-
-    return allTransactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
-      return transactionDate >= startDateFilter && transactionDate <= endDateFilter;
-    });
-  }, [transactions, selectedPeriod, startDate, endDate]);
+  // Transactions are already filtered server-side; use directly
+  const filteredTransactions = transactions || [];
 
   const recentTransactions = filteredTransactions;
 

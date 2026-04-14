@@ -101,7 +101,7 @@ import {
   type InsertClientProgress,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, or, isNull, lte, asc, sql } from "drizzle-orm";
+import { eq, and, desc, or, isNull, lte, gte, asc, sql } from "drizzle-orm";
 
 // Create alias for consistency with existing code
 const accountArchitectures = accountArchitecture;
@@ -150,7 +150,7 @@ export interface IStorage {
   deleteInvestment(id: number): Promise<void>;
 
   // Transaction operations
-  getUserTransactions(userId: number, limit?: number): Promise<Transaction[]>;
+  getUserTransactions(userId: number, limit?: number, startDate?: string, endDate?: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: number, updates: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: number): Promise<void>;
@@ -499,7 +499,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Transaction operations
-  async getUserTransactions(userId: number, limit = 50): Promise<Transaction[]> {
+  async getUserTransactions(userId: number, limit = 50, startDate?: string, endDate?: string): Promise<Transaction[]> {
+    if (startDate && endDate) {
+      return await db
+        .select()
+        .from(transactions)
+        .where(and(
+          eq(transactions.userId, userId),
+          gte(transactions.date, startDate),
+          lte(transactions.date, endDate)
+        ))
+        .orderBy(desc(transactions.date));
+    }
     return await db
       .select()
       .from(transactions)

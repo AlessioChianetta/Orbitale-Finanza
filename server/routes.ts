@@ -1294,7 +1294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.user.id);
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const transactions = await storage.getUserTransactions(userId, limit);
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const transactions = await storage.getUserTransactions(userId, limit, startDate, endDate);
       res.json(transactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -2127,7 +2129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.user.id);
       const limit = parseInt(req.query.limit) || 50;
-      const transactions = await storage.getUserTransactions(userId, limit);
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const transactions = await storage.getUserTransactions(userId, limit, startDate, endDate);
       res.json(transactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
