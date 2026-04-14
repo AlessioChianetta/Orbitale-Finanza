@@ -83,19 +83,15 @@ export async function getFixedCostsForPeriod(
       return 0; // Restituisce 0 per mesi senza configurazione
     }
 
-    // Calcola proporzione in base al periodo
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
     const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     if (daysDiff <= 1) {
       return monthlyFixedCosts / daysInMonth;
-    } else if (daysDiff >= 28 && daysDiff <= 31) {
+    } else if (daysDiff >= daysInMonth) {
       return monthlyFixedCosts;
-    } else if (daysDiff < 28) {
-      return monthlyFixedCosts * (daysDiff / daysInMonth);
     } else {
-      return monthlyFixedCosts;
+      return monthlyFixedCosts * (daysDiff / daysInMonth);
     }
   } catch (error) {
     console.error('Errore calcolo costi fissi:', error);
@@ -175,19 +171,15 @@ export async function getVariableCostsForOrders(
       return 0; // Restituisce 0 per mesi senza configurazione
     }
 
-    // Calcola proporzione in base al periodo
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
     const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     if (daysDiff <= 1) {
       return totalVariableCosts / daysInMonth;
-    } else if (daysDiff >= 28 && daysDiff <= 31) {
+    } else if (daysDiff >= daysInMonth) {
       return totalVariableCosts;
-    } else if (daysDiff < 28) {
-      return totalVariableCosts * (daysDiff / daysInMonth);
     } else {
-      return totalVariableCosts;
+      return totalVariableCosts * (daysDiff / daysInMonth);
     }
   } catch (error) {
     console.error('Errore calcolo costi variabili:', error);

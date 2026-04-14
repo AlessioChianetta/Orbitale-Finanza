@@ -501,7 +501,7 @@ function CategoryBudgetManager({
     );
 
     const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7);
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}`;
 
     switch (timeFilter) {
       case 'current-month':
@@ -1740,7 +1740,7 @@ export default function Budget() {
   });
 
   // State per controlli temporali
-  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM format
+  const [selectedMonth, setSelectedMonth] = useState<string>((() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`; })()); // YYYY-MM format
   const [selectedDateRange, setSelectedDateRange] = useState<{start: string, end: string} | null>(null);
   const [timeFilter, setTimeFilter] = useState<'current-month' | 'custom-month' | 'date-range'>('current-month');
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -1800,7 +1800,7 @@ export default function Budget() {
     );
 
     const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7);
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}`;
 
     switch (timeFilter) {
       case 'current-month':

@@ -1755,7 +1755,7 @@ function AccountConfigurationStep({
                         quantity: 0, 
                         purchasePrice: 0, 
                         type: 'etf',
-                        purchaseDate: new Date().toISOString().split('T')[0] // Data odierna come default
+                        purchaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() // Data odierna come default
                       }
                     ]
                   });

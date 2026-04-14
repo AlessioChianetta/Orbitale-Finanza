@@ -282,7 +282,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
     subcategory: '',
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
     goalId: '',
     investmentId: '',
     accountType: '',
@@ -458,7 +458,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       amount: '',
       description: '',
       accountType: '',
-      date: new Date().toISOString().split('T')[0],
+      date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
       goalId: '',
       investmentId: '',
       isRecurring: false,
@@ -1386,7 +1386,7 @@ function EditTransactionDialog({ transaction, isOpen, onOpenChange }: { transact
     amount: transaction.amount ? transaction.amount.toString() : '',
     category: transaction.category || '',
     subcategory: transaction.subcategory || '',
-    date: transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    date: transaction.date ? transaction.date.split('T')[0] : (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
     accountType: transaction.accountType || ''
   });
   const { toast } = useToast();
@@ -1444,7 +1444,7 @@ function EditTransactionDialog({ transaction, isOpen, onOpenChange }: { transact
       amount: transaction.amount ? transaction.amount.toString() : '',
       category: transaction.category || '',
       subcategory: transaction.subcategory || '',
-      date: transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0],
+      date: transaction.date ? transaction.date.split('T')[0] : (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
       accountType: transaction.accountType || ''
     });
   }, [transaction]);
@@ -2687,7 +2687,7 @@ export default function Transactions() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `report_transazioni_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.pdf`);
+      link.setAttribute('download', `report_transazioni_${selectedPeriod}_${(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();

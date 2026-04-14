@@ -367,7 +367,7 @@ function QuickActionsDialog({ trigger, onUpdate }: { trigger: React.ReactNode; o
     addTransactionMutation.mutate({
       ...transactionData,
       amount: safeFloat(transactionData.amount),
-      date: new Date().toISOString().split('T')[0]
+      date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()
     });
   };
 
@@ -1189,7 +1189,7 @@ export function GoalCreationDialog({ trigger }: { trigger: React.ReactNode }) {
       description: template.description,
       targetAmount: template.defaultAmount?.toString() || '',
       currentAmount: suggestedCurrentAmount,
-      targetDate: new Date(Date.now() + (template.defaultTimeframe || 60) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      targetDate: (() => { const d = new Date(Date.now() + (template.defaultTimeframe || 60) * 30 * 24 * 60 * 60 * 1000); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
       monthlyContribution: ''
     });
     setStep(2);
