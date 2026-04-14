@@ -3051,19 +3051,17 @@ export default function Transactions() {
             </Card>
           </div>
 
-        {/* Enhanced Transactions with Filters */}
-        {/* Enhanced Transactions with Filters - Two Separate Tables */}
-        <div className="mt-12 md:mt-20 space-y-8 md:space-y-12">
+        {/* Transactions List */}
+        <div className="mt-10 space-y-6">
 
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-500 font-medium">Caricamento transazioni in corso...</p>
-              <p className="text-sm text-gray-400 mt-1">Preparando i tuoi dati finanziari</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="animate-spin w-10 h-10 border-[3px] border-indigo-500 border-t-transparent rounded-full"></div>
+              <p className="text-gray-500 text-sm font-medium">Caricamento transazioni…</p>
             </div>
           ) : recentTransactions.length > 0 ? (
             <>
-              {/* Giroconti e Entrate - Enhanced Compact Design */}
+              {/* ── Giroconti & Entrate ───────────────────────────────── */}
               {(() => {
                 const transfers = recentTransactions.filter(t =>
                   t.category === 'Trasferimenti' || t.description?.includes('Giroconto')
@@ -3074,128 +3072,97 @@ export default function Transactions() {
                 if (allInternalMovements.length === 0) return null;
 
                 return (
-                  <Card className="border-0 shadow-lg bg-gradient-to-br from-white via-blue-50/10 to-indigo-50/20 backdrop-blur-sm relative overflow-hidden">
-                    {/* Minimal decorative elements */}
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-full -mr-10 -mt-10"></div>
-                    <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-cyan-400/5 to-transparent rounded-full -ml-8 -mb-8"></div>
-
-                    <CardHeader className="pb-3 relative z-10 px-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                              <Send className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full animate-pulse"></div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                              Giroconti e Entrate
-                            </CardTitle>
-                            <p className="text-sm text-gray-600 mt-0.5 font-medium line-clamp-1">
-                              {allInternalMovements.length} movimenti • Gestione liquidità
-                            </p>
-                          </div>
+                  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    {/* Section header */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                          <Send className="w-4 h-4 text-indigo-600" />
                         </div>
-                        <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg px-3 py-1.5 shadow-sm border border-blue-200/30">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-blue-700 font-semibold">
-                            {selectedPeriod === 'today' ? 'Oggi' :
-                             selectedPeriod === 'week' ? 'Settimana' :
-                             selectedPeriod === 'month' ? 'Mese' :
-                             selectedPeriod === 'year' ? 'Anno' : 'Custom'}
-                          </span>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-sm">Giroconti e Entrate</h3>
+                          <p className="text-xs text-gray-400 mt-0.5">{allInternalMovements.length} movimenti</p>
                         </div>
                       </div>
-                    </CardHeader>
+                      <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
+                        {selectedPeriod === 'today' ? 'Oggi' : selectedPeriod === 'week' ? 'Settimana' : selectedPeriod === 'month' ? 'Mese' : selectedPeriod === 'year' ? 'Anno' : 'Custom'}
+                      </span>
+                    </div>
 
-                    <CardContent className="pt-0 relative z-10 px-4 pb-4">
-                      <div className="space-y-3">
-                        {/* Transfers Section */}
-                        {transfers.length > 0 && (
-                          <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/30 rounded-lg border border-blue-200/30 overflow-hidden">
-                            <button
-                              onClick={() => toggleCategoryExpansion('Trasferimenti')}
-                              className="w-full flex items-center justify-between p-3 hover:bg-blue-100/30 transition-all duration-200 group"
-                            >
-                              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:scale-105 transition-transform duration-200">
-                                  <ArrowLeftRight className="w-4 h-4 text-blue-700" />
-                                </div>
-                                <div className="text-left flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm text-blue-800 truncate">Giroconti</h4>
-                                  <p className="text-xs text-gray-600">{transfers.length} trasferimenti interni</p>
-                                </div>
+                    <div className="divide-y divide-gray-50">
+                      {/* Giroconti sub-section */}
+                      {transfers.length > 0 && (
+                        <div>
+                          <button
+                            onClick={() => toggleCategoryExpansion('Trasferimenti')}
+                            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors duration-150 group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 rounded-md bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600" />
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="text-right">
-                                  <p className="font-bold text-sm text-blue-700">{transfers.length}</p>
-                                </div>
-                                <div className={`p-1.5 rounded-md transition-transform duration-200 ${expandedCategories.has('Trasferimenti') ? 'rotate-180' : ''} bg-white/70 group-hover:bg-white`}>
-                                  <ChevronDown className="w-4 h-4 text-blue-700" />
-                                </div>
-                              </div>
-                            </button>
-
-                            <div className={`transition-all duration-300 ease-out ${expandedCategories.has('Trasferimenti') ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                              <div className="border-t border-blue-200/30 bg-blue-50/20">
-                                {transfers.map((transaction: any, index: number) => (
-                                  <div key={`transfer-${transaction.id}-${transaction.createdAt || index}`} className="px-3 py-2 hover:bg-white/50 transition-colors duration-150 border-b border-blue-100/30 last:border-b-0">
-                                    <TransactionItem transaction={transaction} />
-                                  </div>
-                                ))}
+                              <div className="text-left">
+                                <p className="text-sm font-medium text-gray-800">Giroconti</p>
+                                <p className="text-xs text-gray-400">{transfers.length} trasferimenti interni</p>
                               </div>
                             </div>
-                          </div>
-                        )}
-
-                        {/* Income Section */}
-                        {incomeTransactions.length > 0 && (
-                          <div className="bg-gradient-to-r from-green-50/50 to-emerald-50/30 rounded-lg border border-green-200/30 overflow-hidden">
-                            <button
-                              onClick={() => toggleCategoryExpansion('Entrate')}
-                              className="w-full flex items-center justify-between p-3 hover:bg-green-100/30 transition-all duration-200 group"
-                            >
-                              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                <div className="p-2 rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 group-hover:scale-105 transition-transform duration-200">
-                                  <TrendingUp className="w-4 h-4 text-green-700" />
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{transfers.length}</span>
+                              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedCategories.has('Trasferimenti') ? 'rotate-180' : ''}`} />
+                            </div>
+                          </button>
+                          <div className={`transition-all duration-300 ease-out overflow-hidden ${expandedCategories.has('Trasferimenti') ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="divide-y divide-gray-50 bg-gray-50/40">
+                              {transfers.map((transaction: any, index: number) => (
+                                <div key={`transfer-${transaction.id}-${transaction.createdAt || index}`} className="px-5 py-1.5 hover:bg-white/70 transition-colors duration-100">
+                                  <TransactionItem transaction={transaction} />
                                 </div>
-                                <div className="text-left flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm text-green-800 truncate">Entrate</h4>
-                                  <p className="text-xs text-gray-600">{incomeTransactions.length} ricevuti</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="text-right">
-                                  <p className="font-bold text-sm text-green-700">
-                                    +{formatEuro(incomeTransactions.reduce((sum, t) => sum + (typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount), 0))}
-                                  </p>
-                                </div>
-                                <div className={`p-1.5 rounded-md transition-transform duration-200 ${expandedCategories.has('Entrate') ? 'rotate-180' : ''} bg-white/70 group-hover:bg-white`}>
-                                  <ChevronDown className="w-4 h-4 text-green-700" />
-                                </div>
-                              </div>
-                            </button>
-
-                            <div className={`transition-all duration-300 ease-out ${expandedCategories.has('Entrate') ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                              <div className="border-t border-green-200/30 bg-green-50/20">
-                                {incomeTransactions.map((transaction: any, index: number) => (
-                                  <div key={`income-${transaction.id}-${transaction.createdAt || index}`} className="px-3 py-2 hover:bg-white/50 transition-colors duration-150 border-b border-green-100/30 last:border-b-0">
-                                    <TransactionItem transaction={transaction} />
-                                  </div>
-                                ))}
-                              </div>
+                              ))}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </div>
+                      )}
+
+                      {/* Entrate sub-section */}
+                      {incomeTransactions.length > 0 && (
+                        <div>
+                          <button
+                            onClick={() => toggleCategoryExpansion('Entrate')}
+                            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors duration-150 group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                              </div>
+                              <div className="text-left">
+                                <p className="text-sm font-medium text-gray-800">Entrate</p>
+                                <p className="text-xs text-gray-400">{incomeTransactions.length} ricevuti</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-sm font-bold text-emerald-600">
+                                +{formatEuro(incomeTransactions.reduce((sum, t) => sum + (typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount), 0))}
+                              </span>
+                              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedCategories.has('Entrate') ? 'rotate-180' : ''}`} />
+                            </div>
+                          </button>
+                          <div className={`transition-all duration-300 ease-out overflow-hidden ${expandedCategories.has('Entrate') ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="divide-y divide-gray-50 bg-gray-50/40">
+                              {incomeTransactions.map((transaction: any, index: number) => (
+                                <div key={`income-${transaction.id}-${transaction.createdAt || index}`} className="px-5 py-1.5 hover:bg-white/70 transition-colors duration-100">
+                                  <TransactionItem transaction={transaction} />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 );
               })()}
 
-              {/* Regular Categories Table */}
-              <div className="mt-8 md:mt-16"></div>
+              {/* ── Transazioni per Categoria ─────────────────────────── */}
               {(() => {
                 const regularTransactions = recentTransactions.filter(t =>
                   t.category !== 'Trasferimenti' && 
@@ -3205,140 +3172,107 @@ export default function Transactions() {
 
                 if (regularTransactions.length === 0) return null;
 
-                // Group transactions by actual category
                 const groupedTransactions = regularTransactions.reduce((acc: any, transaction: any) => {
                   const category = transaction.category;
-
                   if (!acc[category]) acc[category] = [];
                   acc[category].push(transaction);
                   return acc;
                 }, {} as Record<string, Transaction[]>);
 
-                // Define category icons and colors - Updated with all new categories
                 const categoryConfig: any = {
-                  'Casa e Abitazione': { icon: Home, bgColor: 'bg-gradient-to-r from-blue-50 to-sky-50', borderColor: 'border-blue-200', textColor: 'text-blue-700', iconBg: 'bg-blue-100' },
-                  'Trasporti': { icon: Car, bgColor: 'bg-gradient-to-r from-purple-50 to-violet-50', borderColor: 'border-purple-200', textColor: 'text-purple-700', iconBg: 'bg-purple-100' },
-                  'Alimentazione': { icon: ShoppingCart, bgColor: 'bg-gradient-to-r from-orange-50 to-amber-50', borderColor: 'border-orange-200', textColor: 'text-orange-700', iconBg: 'bg-orange-100' },
-                  'Salute e Benessere': { icon: Heart, bgColor: 'bg-gradient-to-r from-red-50 to-rose-50', borderColor: 'border-red-200', textColor: 'text-red-700', iconBg: 'bg-red-100' },
-                  'Abbigliamento e Cura': { icon: ShoppingBag, bgColor: 'bg-gradient-to-r from-indigo-50 to-blue-50', borderColor: 'border-indigo-200', textColor: 'text-indigo-700', iconBg: 'bg-indigo-100' },
-                  'Tecnologia e Comunicazione': { icon: Settings, bgColor: 'bg-gradient-to-r from-gray-50 to-slate-50', borderColor: 'border-gray-200', textColor: 'text-gray-700', iconBg: 'bg-gray-100' },
-                  'Intrattenimento e Cultura': { icon: Gamepad2, bgColor: 'bg-gradient-to-r from-pink-50 to-rose-50', borderColor: 'border-pink-200', textColor: 'text-pink-700', iconBg: 'bg-pink-100' },
-                  'Famiglia e Figli': { icon: Baby, bgColor: 'bg-gradient-to-r from-yellow-50 to-orange-50', borderColor: 'border-yellow-200', textColor: 'text-yellow-700', iconBg: 'bg-yellow-100' },
-                  'Lavoro e Formazione': { icon: GraduationCap, bgColor: 'bg-gradient-to-r from-teal-50 to-cyan-50', borderColor: 'border-teal-200', textColor: 'text-teal-700', iconBg: 'bg-teal-100' },
-                  'Debiti e Finanziamenti': { icon: CreditCard, bgColor: 'bg-gradient-to-r from-rose-50 to-red-50', borderColor: 'border-rose-200', textColor: 'text-rose-700', iconBg: 'bg-rose-100' },
-                  'Altro': { icon: DollarSign, bgColor: 'bg-gradient-to-r from-gray-50 to-slate-50', borderColor: 'border-gray-200', textColor: 'text-gray-700', iconBg: 'bg-gray-100' },
-                  // Legacy categories for backward compatibility
-                  'Casa': { icon: Home, bgColor: 'bg-gradient-to-r from-blue-50 to-sky-50', borderColor: 'border-blue-200', textColor: 'text-blue-700', iconBg: 'bg-blue-100' },
-                  'Alimentari': { icon: ShoppingCart, bgColor: 'bg-gradient-to-r from-orange-50 to-amber-50', borderColor: 'border-orange-200', textColor: 'text-orange-700', iconBg: 'bg-orange-100' },
-                  'Ristoranti': { icon: Coffee, bgColor: 'bg-gradient-to-r from-yellow-50 to-orange-50', borderColor: 'border-yellow-200', textColor: 'text-yellow-700', iconBg: 'bg-yellow-100' },
-                  'Intrattenimento': { icon: Gamepad2, bgColor: 'bg-gradient-to-r from-pink-50 to-rose-50', borderColor: 'border-pink-200', textColor: 'text-pink-700', iconBg: 'bg-pink-100' },
-                  'Salute': { icon: Heart, bgColor: 'bg-gradient-to-r from-red-50 to-rose-50', borderColor: 'border-red-200', textColor: 'text-red-700', iconBg: 'bg-red-100' },
-                  'Abbigliamento': { icon: Shirt, bgColor: 'bg-gradient-to-r from-indigo-50 to-blue-50', borderColor: 'border-indigo-200', textColor: 'text-indigo-700', iconBg: 'bg-indigo-100' },
-                  'Tecnologia': { icon: Settings, bgColor: 'bg-gradient-to-r from-gray-50 to-slate-50', borderColor: 'border-gray-200', textColor: 'text-gray-700', iconBg: 'bg-gray-100' },
-                  'Viaggi': { icon: Plane, bgColor: 'bg-gradient-to-r from-sky-50 to-cyan-50', borderColor: 'border-sky-200', textColor: 'text-sky-700', iconBg: 'bg-sky-100' },
-                  'Investimenti': { icon: TrendingUp, bgColor: 'bg-gradient-to-r from-emerald-50 to-green-50', borderColor: 'border-emerald-200', textColor: 'text-emerald-700', iconBg: 'bg-emerald-100' },
-                  'default': { icon: DollarSign, bgColor: 'bg-gradient-to-r from-gray-50 to-slate-50', borderColor: 'border-gray-200', textColor: 'text-gray-700', iconBg: 'bg-gray-100' }
+                  'Casa e Abitazione':         { icon: Home,         accent: 'bg-sky-50 text-sky-600',      bar: 'bg-sky-400' },
+                  'Trasporti':                  { icon: Car,          accent: 'bg-violet-50 text-violet-600', bar: 'bg-violet-400' },
+                  'Alimentazione':              { icon: ShoppingCart, accent: 'bg-orange-50 text-orange-600', bar: 'bg-orange-400' },
+                  'Salute e Benessere':         { icon: Heart,        accent: 'bg-rose-50 text-rose-600',    bar: 'bg-rose-400' },
+                  'Abbigliamento e Cura':       { icon: ShoppingBag,  accent: 'bg-indigo-50 text-indigo-600', bar: 'bg-indigo-400' },
+                  'Tecnologia e Comunicazione': { icon: Settings,     accent: 'bg-slate-50 text-slate-600',  bar: 'bg-slate-400' },
+                  'Intrattenimento e Cultura':  { icon: Gamepad2,     accent: 'bg-pink-50 text-pink-600',    bar: 'bg-pink-400' },
+                  'Famiglia e Figli':           { icon: Baby,         accent: 'bg-amber-50 text-amber-600',  bar: 'bg-amber-400' },
+                  'Lavoro e Formazione':        { icon: GraduationCap,accent: 'bg-teal-50 text-teal-600',   bar: 'bg-teal-400' },
+                  'Debiti e Finanziamenti':     { icon: CreditCard,   accent: 'bg-red-50 text-red-600',     bar: 'bg-red-400' },
+                  'Altro':                      { icon: DollarSign,   accent: 'bg-gray-50 text-gray-600',   bar: 'bg-gray-400' },
+                  'Casa':                       { icon: Home,         accent: 'bg-sky-50 text-sky-600',      bar: 'bg-sky-400' },
+                  'Alimentari':                 { icon: ShoppingCart, accent: 'bg-orange-50 text-orange-600', bar: 'bg-orange-400' },
+                  'Ristoranti':                 { icon: Coffee,       accent: 'bg-amber-50 text-amber-600',  bar: 'bg-amber-400' },
+                  'Intrattenimento':            { icon: Gamepad2,     accent: 'bg-pink-50 text-pink-600',    bar: 'bg-pink-400' },
+                  'Salute':                     { icon: Heart,        accent: 'bg-rose-50 text-rose-600',    bar: 'bg-rose-400' },
+                  'Abbigliamento':              { icon: Shirt,        accent: 'bg-indigo-50 text-indigo-600', bar: 'bg-indigo-400' },
+                  'Tecnologia':                 { icon: Settings,     accent: 'bg-slate-50 text-slate-600',  bar: 'bg-slate-400' },
+                  'Viaggi':                     { icon: Plane,        accent: 'bg-cyan-50 text-cyan-600',    bar: 'bg-cyan-400' },
+                  'Investimenti':               { icon: TrendingUp,   accent: 'bg-emerald-50 text-emerald-600', bar: 'bg-emerald-400' },
+                  'default':                    { icon: DollarSign,   accent: 'bg-gray-50 text-gray-600',   bar: 'bg-gray-400' },
                 };
 
-                return (
-                  <Card className="border-0 shadow-lg bg-gradient-to-br from-white via-gray-50/20 to-indigo-50/20 backdrop-blur-sm relative overflow-hidden">
-                    {/* Minimal decorative elements */}
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-purple-400/10 to-transparent rounded-full -mr-10 -mt-10"></div>
-                    <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-blue-400/5 to-transparent rounded-full -ml-8 -mb-8"></div>
+                const grandTotal = regularTransactions.reduce((sum: number, t: any) => {
+                  const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+                  return sum + Math.abs(amount);
+                }, 0);
 
-                    <CardHeader className="pb-3 relative z-10 px-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
-                              <History className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full animate-pulse"></div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg font-bold bg-gradient-to-r from-purple-700 to-indigo-700 bg-clip-text text-transparent">
-                              Transazioni per Categoria
-                            </CardTitle>
-                            <p className="text-sm text-gray-600 mt-0.5 font-medium line-clamp-1">
-                              Tutte le entrate e spese organizzate • Analisi dettagliata
-                            </p>
-                          </div>
+                return (
+                  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    {/* Section header */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                          <History className="w-4 h-4 text-purple-600" />
                         </div>
-                        <div className="flex items-center space-x-2 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg px-3 py-1.5 shadow-sm border border-purple-200/30">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-purple-700 font-semibold">
-                            {selectedPeriod === 'today' ? 'Oggi' :
-                             selectedPeriod === 'week' ? 'Settimana' :
-                             selectedPeriod === 'month' ? 'Mese' :
-                             selectedPeriod === 'year' ? 'Anno' : 'Custom'}
-                          </span>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-sm">Transazioni per Categoria</h3>
+                          <p className="text-xs text-gray-400 mt-0.5">{regularTransactions.length} operazioni • {Object.keys(groupedTransactions).length} categorie</p>
                         </div>
                       </div>
-                    </CardHeader>
+                      <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+                        {selectedPeriod === 'today' ? 'Oggi' : selectedPeriod === 'week' ? 'Settimana' : selectedPeriod === 'month' ? 'Mese' : selectedPeriod === 'year' ? 'Anno' : 'Custom'}
+                      </span>
+                    </div>
 
-                    <CardContent className="pt-0 relative z-10 px-4 pb-4">
-                      <div className="space-y-3">
-                        {Object.entries(groupedTransactions)
-                          .sort(([a], [b]) => a === 'Entrate' ? -1 : b === 'Entrate' ? 1 : a.localeCompare(b))
-                          .map(([category, transactions]: [string, any]) => {
+                    <div className="divide-y divide-gray-50">
+                      {Object.entries(groupedTransactions)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([category, transactions]: [string, any]) => {
                           const config = categoryConfig[category] || categoryConfig.default;
                           const Icon = config.icon;
                           const isExpanded = expandedCategories.has(category);
-
                           const total = transactions.reduce((sum: number, t: any) => {
                             const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-                            return sum + (t.type === 'expense' ? Math.abs(amount) : amount);
+                            return sum + Math.abs(amount);
                           }, 0);
-
                           const isIncomeCategory = transactions.some((t: any) => t.type === 'income');
+                          const pct = grandTotal > 0 ? Math.round((total / grandTotal) * 100) : 0;
 
                           return (
-                            <div key={category} className={`bg-gradient-to-r from-white via-gray-50/40 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-200/50`}>
-                              {/* Compact Category Header */}
+                            <div key={category}>
                               <button
                                 onClick={() => toggleCategoryExpansion(category)}
-                                className={`w-full flex items-center justify-between p-3 ${config.bgColor} hover:from-opacity-80 transition-all duration-200 group relative overflow-hidden`}
+                                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors duration-150 group"
                               >
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-
-                                <div className="flex items-center space-x-3 relative z-10 flex-1 min-w-0">
-                                  <div className="relative flex-shrink-0">
-                                    <div className={`p-2 rounded-lg ${config.iconBg} shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200`}>
-                                      <Icon className={`w-4 h-4 ${config.textColor}`} />
-                                    </div>
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.accent.split(' ')[0]}`}>
+                                    <Icon className={`w-4 h-4 ${config.accent.split(' ')[1]}`} />
                                   </div>
                                   <div className="text-left flex-1 min-w-0">
-                                    <h4 className={`font-semibold text-sm ${config.textColor} truncate`}>{category}</h4>
-                                    <div className="flex items-center space-x-2 text-xs text-gray-600">
-                                      <div className={`w-1.5 h-1.5 ${config.textColor.replace('text-', 'bg-')} rounded-full flex-shrink-0`}></div>
-                                      <span className="font-medium">{transactions.length} operazioni</span>
+                                    <p className="text-sm font-medium text-gray-800 truncate">{category}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <div className="flex-1 h-1 rounded-full bg-gray-100 max-w-[80px]">
+                                        <div className={`h-1 rounded-full ${config.bar}`} style={{ width: `${pct}%` }}></div>
+                                      </div>
+                                      <span className="text-xs text-gray-400 flex-shrink-0">{transactions.length} op.</span>
                                     </div>
                                   </div>
                                 </div>
-
-                                <div className="flex items-center space-x-3 relative z-10">
-                                  <div className="text-right">
-                                    <p className={`font-bold text-sm ${isIncomeCategory ? 'text-green-700' : 'text-red-700'}`}>
-                                      {isIncomeCategory ? '+' : '-'}{formatEuro(Math.abs(total))}
-                                    </p>
-                                    <p className="text-xs text-gray-600">
-                                      {isIncomeCategory ? '💰 Ricevuti' : '💸 Spesi'}
-                                    </p>
-                                  </div>
-                                  <div className={`p-1.5 rounded-md transition-all duration-200 ${isExpanded ? 'rotate-180 bg-white/90 shadow-sm' : 'bg-white/70 shadow-sm'} group-hover:bg-white`}>
-                                    <ChevronDown className={`w-4 h-4 ${config.textColor}`} />
-                                  </div>
+                                <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
+                                  <span className={`text-sm font-bold ${isIncomeCategory ? 'text-emerald-600' : 'text-gray-700'}`}>
+                                    {isIncomeCategory ? '+' : '-'}{formatEuro(Math.abs(total))}
+                                  </span>
+                                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                                 </div>
                               </button>
 
-                              {/* Compact Expandable Transaction List */}
-                              <div className={`transition-all duration-300 ease-out ${isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                                <div className="divide-y divide-gray-100/50 bg-gradient-to-br from-gray-50/20 via-white/40 to-gray-50/10">
+                              <div className={`transition-all duration-300 ease-out overflow-hidden ${isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className="divide-y divide-gray-50 bg-gray-50/40">
                                   {transactions.map((transaction: any, index: number) => (
-                                    <div key={`${category}-${transaction.id}-${transaction.createdAt || index}`} className="hover:bg-white/50 transition-colors duration-150">
-                                      <div className="p-2.5">
-                                        <TransactionItem transaction={transaction} />
-                                      </div>
+                                    <div key={`${category}-${transaction.id}-${transaction.createdAt || index}`} className="px-5 py-1.5 hover:bg-white/70 transition-colors duration-100">
+                                      <TransactionItem transaction={transaction} />
                                     </div>
                                   ))}
                                 </div>
@@ -3346,28 +3280,24 @@ export default function Transactions() {
                             </div>
                           );
                         })}
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 );
               })()}
             </>
           ) : (
-            <div className="text-center py-12 md:py-16 px-4">
-              <div className="relative mb-6">
-                <div className="w-16 md:w-20 h-16 md:h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Wallet className="w-8 md:w-10 h-8 md:h-10 text-indigo-500" />
-                </div>
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-20 md:w-24 h-20 md:h-24 bg-indigo-200 rounded-full opacity-20 animate-ping"></div>
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
+                <Wallet className="w-8 h-8 text-indigo-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">Nessuna transazione ancora</h3>
-              <p className="text-sm md:text-base text-gray-500 mb-6 max-w-md mx-auto">
-                Inizia il tuo viaggio finanziario aggiungendo la tua prima transazione e prendi il controllo delle tue finanze
+              <h3 className="text-base font-semibold text-gray-700 mb-1">Nessuna transazione trovata</h3>
+              <p className="text-sm text-gray-400 mb-6 max-w-sm">
+                Inizia aggiungendo la tua prima transazione per tenere traccia delle tue finanze.
               </p>
               <AddTransactionDialog
                 trigger={
-                  <Button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 md:px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 text-sm md:text-base">
-                    <Plus className="w-4 md:w-5 h-4 md:h-5 mr-2" />
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm text-sm">
+                    <Plus className="w-4 h-4 mr-2" />
                     Aggiungi Prima Transazione
                   </Button>
                 }
