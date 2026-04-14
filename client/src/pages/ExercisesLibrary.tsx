@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -131,7 +132,7 @@ export default function ExercisesLibrary() {
     }
 
     assignExerciseMutation.mutate({
-      clientId: parseInt(selectedClient),
+      clientId: safeInt(selectedClient),
       exerciseId: exerciseToAssign.id,
       priority: 'medium',
       consultantNotes: 'Esercizio assegnato tramite biblioteca'

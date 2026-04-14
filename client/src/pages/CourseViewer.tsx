@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -358,7 +359,7 @@ export default function CourseViewer({ courseId }: CourseViewerProps) {
                       <RadioGroup
                         value={quizAnswers[question.id]?.toString()}
                         onValueChange={(value) => 
-                          setQuizAnswers(prev => ({ ...prev, [question.id]: parseInt(value) }))
+                          setQuizAnswers(prev => ({ ...prev, [question.id]: safeInt(value) }))
                         }
                         disabled={quizSubmitted}
                       >

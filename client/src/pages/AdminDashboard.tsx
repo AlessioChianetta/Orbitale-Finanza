@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -328,7 +329,7 @@ export default function AdminDashboard() {
       description: formData.get('description'),
       level: formData.get('level'),
       tags: formData.get('tags')?.toString().split(',').map(tag => tag.trim()) || [],
-      estimatedDuration: parseInt(formData.get('estimatedDuration')?.toString() || '0'),
+      estimatedDuration: safeInt(formData.get('estimatedDuration')?.toString()),
       isPublished: formData.get('isPublished') === 'on',
     };
 
@@ -354,7 +355,7 @@ export default function AdminDashboard() {
       description: formData.get('categoryDescription'),
       icon: formData.get('categoryIcon'),
       color: formData.get('categoryColor'),
-      courseId: parseInt(courseId),
+      courseId: safeInt(courseId),
     };
     
     if (selectedCategory) {
@@ -382,10 +383,10 @@ export default function AdminDashboard() {
       specialization: formData.get('tutorSpecialization'),
       experience: formData.get('tutorExperience'),
       bio: formData.get('tutorBio'),
-      hourlyRate: parseFloat(formData.get('hourlyRate')?.toString() || '0'),
+      hourlyRate: safeFloat(formData.get('hourlyRate')?.toString()),
       isActive: formData.get('tutorActive') === 'on',
-      rating: parseFloat(formData.get('tutorRating')?.toString() || '0'),
-      totalReviews: parseInt(formData.get('totalReviews')?.toString() || '0'),
+      rating: safeFloat(formData.get('tutorRating')?.toString()),
+      totalReviews: safeInt(formData.get('totalReviews')?.toString()),
       assignedEmails: assignedEmails,
     };
     
@@ -404,8 +405,8 @@ export default function AdminDashboard() {
       title: formData.get('lessonTitle'),
       description: formData.get('lessonDescription'),
       videoUrl: formData.get('videoUrl'),
-      categoryId: parseInt(formData.get('lessonCategory')?.toString() || '0') || null,
-      duration: parseInt(formData.get('lessonDuration')?.toString() || '0') || null,
+      categoryId: safeInt(formData.get('lessonCategory')?.toString()) || null,
+      duration: safeInt(formData.get('lessonDuration')?.toString()) || null,
       sortOrder: parseInt(formData.get('lessonOrder')?.toString() || '0') || 0,
       isPublished: formData.get('lessonPublished') === 'on',
     };
@@ -627,7 +628,7 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <Select value={selectedCourse?.id?.toString() || ''} onValueChange={(value) => {
-                  const course = courses?.find((c: any) => c.id === parseInt(value));
+                  const course = courses?.find((c: any) => c.id === safeInt(value));
                   setSelectedCourse(course || null);
                 }}>
                   <SelectTrigger className="w-48">

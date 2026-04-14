@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -423,7 +424,7 @@ export default function AccountArchitecture() {
       return;
     }
 
-    const amount = parseFloat(transferForm.amount);
+    const amount = safeFloat(transferForm.amount);
     if (amount <= 0) {
       toast({
         title: "Errore",
@@ -979,7 +980,7 @@ function ArchitectureSettings({ architecture }: { architecture: AccountArchitect
             <Label htmlFor="distributionDay">Giorno di Distribuzione Mensile</Label>
             <Select 
               value={settings.distributionDay.toString()} 
-              onValueChange={(value) => setSettings({...settings, distributionDay: parseInt(value)})}
+              onValueChange={(value) => setSettings({...settings, distributionDay: safeInt(value)})}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -1128,9 +1129,9 @@ function SetupWizard({
 
     try {
       const architectureData = {
-        monthlyIncome: parseFloat(monthlyIncome),
+        monthlyIncome: safeFloat(monthlyIncome),
         autoDistributionEnabled: autoDistribution,
-        distributionDay: parseInt(distributionDay),
+        distributionDay: safeInt(distributionDay),
         accounts: {
           income: {
             ...STANDARD_ACCOUNTS.income,
@@ -1284,7 +1285,7 @@ function SetupWizard({
             accountInfo={STANDARD_ACCOUNTS[accountKeys[step - 2] as keyof typeof STANDARD_ACCOUNTS]}
             accountConfig={accountsConfig[accountKeys[step - 2] as keyof typeof accountsConfig]}
             availableAssets={getAvailableAssets()}
-            monthlyIncome={parseFloat(monthlyIncome)}
+            monthlyIncome={safeFloat(monthlyIncome)}
             onUpdateConfig={updateAccountConfig}
             onNext={() => setStep(step + 1)}
             onBack={() => setStep(step - 1)}

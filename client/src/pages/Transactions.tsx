@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -341,9 +342,9 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
 
       const payload = {
         ...data,
-        amount: parseFloat(data.amount),
-        goalId: data.goalId ? parseInt(data.goalId) : undefined,
-        investmentId: data.investmentId ? parseInt(data.investmentId) : undefined,
+        amount: safeFloat(data.amount),
+        goalId: data.goalId ? safeInt(data.goalId) : undefined,
+        investmentId: data.investmentId ? safeInt(data.investmentId) : undefined,
         account_type: data.accountType // Map frontend field to backend field
       };
 
@@ -556,7 +557,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       return;
     }
 
-    const amount = parseFloat(formData.amount);
+    const amount = safeFloat(formData.amount);
 
     // Validazione liquidità per investimenti (solo investimenti usano liquidità)
     if (formData.type === 'investment' && amount > availableLiquidity) {
@@ -962,9 +963,9 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                     onChange={(e) => setFormData({...formData, amount: e.target.value})}
                     placeholder="0.00"
                     className={`h-12 text-lg font-semibold border-2 transition-colors ${
-                      (formData.type === 'investment' && parseFloat(formData.amount) > availableLiquidity) ||
+                      (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity) ||
                       ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') &&
-                       parseFloat(formData.amount) > selectedAccountBalance)
+                       safeFloat(formData.amount) > selectedAccountBalance)
                         ? "border-red-300 focus:border-red-500"
                         : "hover:border-blue-300 focus:border-blue-500"
                     }`}
@@ -974,14 +975,14 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                       undefined
                     }
                   />
-                  {formData.type === 'investment' && parseFloat(formData.amount) > availableLiquidity && (
+                  {formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity && (
                     <p className="text-xs text-red-500 flex items-center space-x-1">
                       <AlertTriangle className="w-3 h-3" />
                       <span>Importo superiore alla liquidità disponibile</span>
                     </p>
                   )}
                   {(formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') &&
-                   parseFloat(formData.amount) > selectedAccountBalance && (
+                   safeFloat(formData.amount) > selectedAccountBalance && (
                     <p className="text-xs text-red-500 flex items-center space-x-1">
                       <AlertTriangle className="w-3 h-3" />
                       <span>Importo superiore al saldo disponibile</span>
@@ -1254,7 +1255,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                           min="1"
                           max="31"
                           value={formData.dayOfMonth}
-                          onChange={(e) => setFormData({...formData, dayOfMonth: parseInt(e.target.value)})}
+                          onChange={(e) => setFormData({...formData, dayOfMonth: safeInt(e.target.value)})}
                           className="h-10 border-2 hover:border-purple-300 transition-colors"
                         />
                       </div>
@@ -1321,8 +1322,8 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                     addTransactionMutation.isPending ||
                     (formData.type === 'investment' && availableLiquidity <= 0) ||
                     ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && formData.accountType && selectedAccountBalance <= 0) ||
-                    ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && parseFloat(formData.amount) > selectedAccountBalance) ||
-                    (formData.type === 'investment' && parseFloat(formData.amount) > availableLiquidity)
+                    ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance) ||
+                    (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity)
                   }
                   className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                 >
@@ -1344,8 +1345,8 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                 addTransactionMutation.isPending ||
                 (formData.type === 'investment' && availableLiquidity <= 0) ||
                 ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && formData.accountType && selectedAccountBalance <= 0) ||
-                ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && parseFloat(formData.amount) > selectedAccountBalance) ||
-                (formData.type === 'investment' && parseFloat(formData.amount) > availableLiquidity)
+                ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance) ||
+                (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity)
               }
               className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 font-semibold text-lg"
             >
@@ -1357,11 +1358,11 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
               ) :
                (formData.type === 'investment' && availableLiquidity <= 0) ?
                "❌ Liquidità insufficiente" :
-               (formData.type === 'investment' && parseFloat(formData.amount) > availableLiquidity) ?
+               (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity) ?
                "❌ Importo superiore alla liquidità" :
                ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && formData.accountType && selectedAccountBalance <= 0) ?
                "❌ Saldo insufficiente" :
-               ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && parseFloat(formData.amount) > selectedAccountBalance) ?
+               ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance) ?
                "❌ Importo superiore al saldo" :
                "✅ Aggiungi Transazione"}
             </Button>
@@ -1404,7 +1405,7 @@ function EditTransactionDialog({ transaction, isOpen, onOpenChange }: { transact
     mutationFn: async (data: any) => {
       const payload = {
         description: data.description,
-        amount: parseFloat(data.amount),
+        amount: safeFloat(data.amount),
         category: data.category,
         subcategory: data.subcategory || null,
         date: data.date,
@@ -1541,7 +1542,7 @@ function EditTransactionDialog({ transaction, isOpen, onOpenChange }: { transact
       return;
     }
 
-    const amount = parseFloat(formData.amount);
+    const amount = safeFloat(formData.amount);
     if (amount <= 0) {
       toast({
         title: "Importo non valido",
@@ -1780,7 +1781,7 @@ function TransactionItem({ transaction }: { transaction: any }) {
   };
 
   const Icon = getTransactionIcon(transaction.type, transaction.source || 'manual');
-  const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+  const amount = safeFloat(transaction.amount);
   const isTransfer = transaction.category === 'Trasferimenti' || transaction.description?.includes('Giroconto');
   const isPositive = transaction.type === 'income';
 
@@ -1875,7 +1876,7 @@ function TransactionItem({ transaction }: { transaction: any }) {
               <span className="text-xs text-gray-400 truncate">{transaction.subcategory}</span>
             )}
             <span className="text-xs text-gray-400">
-              {new Date(transaction.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' })}
+              {(() => { const p = transaction.date.split('-'); return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' }); })()}
             </span>
             {!isTransfer && transaction.accountType && (
               <span className="text-xs text-gray-400 truncate max-w-[160px]">
@@ -2027,7 +2028,7 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
   };
 
   const canProceedToStep3 = () => {
-    return canProceedToStep2() && transferForm.amount && parseFloat(transferForm.amount) > 0;
+    return canProceedToStep2() && transferForm.amount && safeFloat(transferForm.amount) > 0;
   };
 
   const nextStep = () => {
@@ -2070,7 +2071,7 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
       return;
     }
 
-    const amount = parseFloat(transferForm.amount);
+    const amount = safeFloat(transferForm.amount);
     if (amount <= 0) {
       toast({
         title: "Errore",
@@ -2362,7 +2363,7 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
                   onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})}
                   placeholder="0.00"
                   className={`font-bold border-2 transition-colors bg-white/80 backdrop-blur-sm ${
-                    parseFloat(transferForm.amount) > fromAccountBalance 
+                    safeFloat(transferForm.amount) > fromAccountBalance 
                       ? "border-red-300 focus:border-red-500"
                       : "hover:border-blue-300 focus:border-blue-500"
                   } ${isMobile ? 'h-12 text-lg pl-10' : 'h-14 text-xl pl-12'}`}
@@ -2371,16 +2372,16 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
                   €
                 </div>
               </div>
-              {parseFloat(transferForm.amount) > fromAccountBalance && (
+              {safeFloat(transferForm.amount) > fromAccountBalance && (
                 <p className="text-xs text-red-500 flex items-center space-x-1">
                   <AlertTriangle className="w-3 h-3" />
                   <span>Importo superiore al saldo disponibile</span>
                 </p>
               )}
-              {transferForm.amount && parseFloat(transferForm.amount) > 0 && parseFloat(transferForm.amount) <= fromAccountBalance && (
+              {transferForm.amount && safeFloat(transferForm.amount) > 0 && safeFloat(transferForm.amount) <= fromAccountBalance && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
                   <p className="text-xs sm:text-sm text-blue-700 font-medium">
-                    💶 Trasferimento di <span className="font-bold">{formatEuro(parseFloat(transferForm.amount))}</span>
+                    💶 Trasferimento di <span className="font-bold">{formatEuro(safeFloat(transferForm.amount))}</span>
                   </p>
                 </div>
               )}
@@ -2409,7 +2410,7 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
                       <ArrowLeftRight className={`text-white ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     </div>
                     <p className={`font-black text-blue-700 mt-2 ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                      {formatEuro(parseFloat(transferForm.amount) || 0)}
+                      {formatEuro(safeFloat(transferForm.amount) || 0)}
                     </p>
                   </div>
                   <div className="flex-1">
@@ -2474,7 +2475,7 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
                   onClick={handleTransferSubmit}
                   disabled={
                     transferMutation.isPending ||
-                    parseFloat(transferForm.amount) > fromAccountBalance ||
+                    safeFloat(transferForm.amount) > fromAccountBalance ||
                     !transferForm.fromAccount ||
                     !transferForm.toAccount ||
                     !transferForm.amount
@@ -3113,7 +3114,7 @@ export default function Transactions() {
                             </div>
                             <div className="flex items-center gap-2.5">
                               <span className="text-sm font-bold text-emerald-600">
-                                +{formatEuro(incomeTransactions.reduce((sum, t) => sum + (typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount), 0))}
+                                +{formatEuro(incomeTransactions.reduce((sum, t) => sum + (safeFloat(t.amount)), 0))}
                               </span>
                               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedCategories.has('Entrate') ? 'rotate-180' : ''}`} />
                             </div>
@@ -3176,7 +3177,7 @@ export default function Transactions() {
                 };
 
                 const grandTotal = regularTransactions.reduce((sum: number, t: any) => {
-                  const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+                  const amount = safeFloat(t.amount);
                   return sum + Math.abs(amount);
                 }, 0);
 
@@ -3206,7 +3207,7 @@ export default function Transactions() {
                           const Icon = config.icon;
                           const isExpanded = expandedCategories.has(category);
                           const total = transactions.reduce((sum: number, t: any) => {
-                            const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+                            const amount = safeFloat(t.amount);
                             return sum + Math.abs(amount);
                           }, 0);
                           const isIncomeCategory = transactions.some((t: any) => t.type === 'income');

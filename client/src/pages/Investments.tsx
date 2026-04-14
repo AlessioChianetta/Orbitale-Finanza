@@ -1,10 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-
-function safeFloat(value: string | number | null | undefined, fallback: number = 0): number {
-  if (value === null || value === undefined) return fallback;
-  const parsed = typeof value === 'number' ? value : parseFloat(value);
-  return isNaN(parsed) ? fallback : parsed;
-}
+import { useState, useEffect, useRef } from "react";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -1487,7 +1482,7 @@ export default function Investments() {
               <div className="mb-6">
                 <Label htmlFor="goal-select">Collega a Obiettivo di Investimento *</Label>
                 <div className="flex gap-2">
-                  <Select value={selectedGoalId?.toString() || ''} onValueChange={(value) => setSelectedGoalId(parseInt(value))}>
+                  <Select value={selectedGoalId?.toString() || ''} onValueChange={(value) => setSelectedGoalId(safeInt(value))}>
                     <SelectTrigger className="flex-1">
                       <SelectValue placeholder="Seleziona un obiettivo di investimento..." />
                     </SelectTrigger>

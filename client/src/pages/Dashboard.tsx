@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
@@ -794,7 +795,7 @@ export default function Dashboard() {
                     };
 
                     const Icon = getTransactionIcon(transaction.type, transaction.source || 'manual');
-                    const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+                    const amount = safeFloat(transaction.amount);
                     
                     return (
                       <div key={transaction.id} className="flex items-center space-x-4 p-3 hover:bg-soft-gray rounded-lg transition-colors">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -350,7 +351,7 @@ export default function Simulator() {
                             type="number"
                             value={timeHorizon[0]}
                             onChange={(e) => {
-                              const value = Math.min(Math.max(parseInt(e.target.value) || 1, 1), 40);
+                              const value = Math.min(Math.max(safeInt(e.target.value, 1), 1), 40);
                               setTimeHorizon([value]);
                             }}
                             min={1}
@@ -500,7 +501,7 @@ export default function Simulator() {
                             type="number"
                             value={monthlyExpenses[0] * 100}
                             onChange={(e) => {
-                              const value = Math.min(Math.max(parseInt(e.target.value) || 500, 500), 5000);
+                              const value = Math.min(Math.max(safeInt(e.target.value, 500), 500), 5000);
                               setMonthlyExpenses([value / 100]);
                             }}
                             min={500}

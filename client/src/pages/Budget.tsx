@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { safeFloat, toLocaleDateSafe } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -296,7 +297,7 @@ function CategoryBreakdownItem({ spending, allCategories }: { spending: Category
                 <div>
                   <p className="font-medium">{transaction.description || 'Transazione'}</p>
                   <p className="text-gray-500">
-                    {new Date(transaction.date).toLocaleDateString('it-IT')} • {transaction.type === 'expense' ? 'Spesa' : transaction.type === 'investment' ? 'Investimento' : 'Entrata'}
+                    {toLocaleDateSafe(transaction.date)} • {transaction.type === 'expense' ? 'Spesa' : transaction.type === 'investment' ? 'Investimento' : 'Entrata'}
                   </p>
                 </div>
                 <span className={`font-medium ${
@@ -319,19 +320,19 @@ function BudgetVisualization({ spendingData, budgetSettings, allCategories }: {
   budgetSettings: BudgetSettings,
   allCategories: CategoriesMap
 }) {
-  const monthlyIncome = parseFloat(budgetSettings.monthlyIncome || '0');
-  const needsBudget = (monthlyIncome * parseFloat(budgetSettings.needsPercentage)) / 100;
-  const wantsBudget = (monthlyIncome * parseFloat(budgetSettings.wantsPercentage)) / 100;
-  const savingsBudget = (monthlyIncome * parseFloat(budgetSettings.savingsPercentage)) / 100;
+  const monthlyIncome = safeFloat(budgetSettings.monthlyIncome);
+  const needsBudget = (monthlyIncome * safeFloat(budgetSettings.needsPercentage)) / 100;
+  const wantsBudget = (monthlyIncome * safeFloat(budgetSettings.wantsPercentage)) / 100;
+  const savingsBudget = (monthlyIncome * safeFloat(budgetSettings.savingsPercentage)) / 100;
 
   const needsSpent = spendingData.filter(s => s.budgetCategory === 'needs').reduce((sum, s) => sum + s.amount, 0);
   const wantsSpent = spendingData.filter(s => s.budgetCategory === 'wants').reduce((sum, s) => sum + s.amount, 0);
   const savingsSpent = spendingData.filter(s => s.budgetCategory === 'savings').reduce((sum, s) => sum + s.amount, 0);
 
   const budgetData = [
-    { name: 'Bisogni', budget: needsBudget, spent: needsSpent, percentage: parseFloat(budgetSettings.needsPercentage) },
-    { name: 'Desideri', budget: wantsBudget, spent: wantsSpent, percentage: parseFloat(budgetSettings.wantsPercentage) },
-    { name: 'Risparmi', budget: savingsBudget, spent: savingsSpent, percentage: parseFloat(budgetSettings.savingsPercentage) }
+    { name: 'Bisogni', budget: needsBudget, spent: needsSpent, percentage: safeFloat(budgetSettings.needsPercentage) },
+    { name: 'Desideri', budget: wantsBudget, spent: wantsSpent, percentage: safeFloat(budgetSettings.wantsPercentage) },
+    { name: 'Risparmi', budget: savingsBudget, spent: savingsSpent, percentage: safeFloat(budgetSettings.savingsPercentage) }
   ];
 
   const treemapData = spendingData.map(spending => ({
@@ -690,7 +691,7 @@ function CategoryBudgetManager({
     if (!Array.isArray(categoryBudgets)) {
       return 0;
     }
-    return categoryBudgets.reduce((total, budget) => total + parseFloat(budget.monthlyBudget.toString()), 0);
+    return categoryBudgets.reduce((total, budget) => total + safeFloat(budget.monthlyBudget), 0);
   };
 
   const getBudgetsByType = (type: 'needs' | 'wants' | 'savings') => {
@@ -719,8 +720,8 @@ function CategoryBudgetManager({
       const subcategoryBudgets = categoryData.subcategories.map((sub: BudgetSubcategory) => getBudgetForCategory(categoryName, sub.name))
         .filter((budget): budget is CategoryBudget => budget !== null && budget !== undefined);
 
-      const mainCategoryAmount = categoryBudget ? parseFloat(categoryBudget.monthlyBudget.toString()) : 0;
-      const subcategoriesAmount = subcategoryBudgets.reduce((sum: number, b: CategoryBudget) => sum + parseFloat(b.monthlyBudget.toString()), 0);
+      const mainCategoryAmount = categoryBudget ? safeFloat(categoryBudget.monthlyBudget) : 0;
+      const subcategoriesAmount = subcategoryBudgets.reduce((sum: number, b: CategoryBudget) => sum + safeFloat(b.monthlyBudget), 0);
 
       summary[categoryName] = {
         total: mainCategoryAmount + subcategoriesAmount,
@@ -846,10 +847,10 @@ function CategoryBudgetManager({
             const realSpending = getRealSpendingByCategory(filteredTransactions);
 
             // Calculate theoretical budget based on budget settings
-            const monthlyIncome = parseFloat(budgetSettings?.monthlyIncome || '0');
-            const needsBudgetTheoretical = (monthlyIncome * parseFloat(budgetSettings?.needsPercentage || '50')) / 100;
-            const wantsBudgetTheoretical = (monthlyIncome * parseFloat(budgetSettings?.wantsPercentage || '30')) / 100;
-            const savingsBudgetTheoretical = (monthlyIncome * parseFloat(budgetSettings?.savingsPercentage || '20')) / 100;
+            const monthlyIncome = safeFloat(budgetSettings?.monthlyIncome);
+            const needsBudgetTheoretical = (monthlyIncome * safeFloat(budgetSettings?.needsPercentage, 50)) / 100;
+            const wantsBudgetTheoretical = (monthlyIncome * safeFloat(budgetSettings?.wantsPercentage, 30)) / 100;
+            const savingsBudgetTheoretical = (monthlyIncome * safeFloat(budgetSettings?.savingsPercentage, 20)) / 100;
 
             // Calculate actual spending by budget type
             let needsSpent = 0;
@@ -1253,7 +1254,7 @@ function CategoryBudgetManager({
                                     </p>
                                   </div>
                                   <span className="text-sm font-bold text-red-600">
-                                    -{formatEuro(Math.abs(parseFloat(t.amount)))}
+                                    -{formatEuro(Math.abs(safeFloat(t.amount)))}
                                   </span>
                                 </div>
                               </div>
@@ -1338,7 +1339,7 @@ function CategoryBudgetManager({
                         {categoryBudget && (
                           <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
                             <span className="font-bold text-lg bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                              {formatEuro(parseFloat(categoryBudget.monthlyBudget.toString()))}
+                              {formatEuro(safeFloat(categoryBudget.monthlyBudget))}
                             </span>
                           </div>
                         )}
@@ -1374,7 +1375,7 @@ function CategoryBudgetManager({
                             {categoryBudget ? (
                               <>
                                 <span className="font-bold text-2xl bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                                  {formatEuro(parseFloat(categoryBudget.monthlyBudget.toString()))}
+                                  {formatEuro(safeFloat(categoryBudget.monthlyBudget))}
                                 </span>
                                 <Button
                                   size="sm"
@@ -1391,7 +1392,7 @@ function CategoryBudgetManager({
                                   onClick={() => setDeletingBudget({
                                     id: categoryBudget.id!,
                                     category: categoryName,
-                                    amount: formatEuro(parseFloat(categoryBudget.monthlyBudget.toString()))
+                                    amount: formatEuro(safeFloat(categoryBudget.monthlyBudget))
                                   })}
                                   className="bg-red-50 text-red-600 hover:text-red-700 hover:bg-red-100 border-red-200 shadow-sm"
                                   disabled={deleteBudgetMutation.isPending}
@@ -1445,7 +1446,7 @@ function CategoryBudgetManager({
                                     {subBudget ? (
                                       <>
                                         <span className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">
-                                          {formatEuro(parseFloat(subBudget.monthlyBudget.toString()))}
+                                          {formatEuro(safeFloat(subBudget.monthlyBudget))}
                                         </span>
                                         <Button
                                           size="sm"
@@ -1461,7 +1462,7 @@ function CategoryBudgetManager({
                                           onClick={() => setDeletingBudget({
                                             id: subBudget.id!,
                                             category: `${categoryName} - ${subcategory.name}`,
-                                            amount: formatEuro(parseFloat(subBudget.monthlyBudget.toString()))
+                                            amount: formatEuro(safeFloat(subBudget.monthlyBudget))
                                           })}
                                           className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
                                           disabled={deleteBudgetMutation.isPending}
@@ -1621,7 +1622,7 @@ function BudgetSetup({ budgetSettings, onUpdate }: {
   });
 
   const handleSave = () => {
-    const total = parseFloat(needsPercentage) + parseFloat(wantsPercentage) + parseFloat(savingsPercentage);
+    const total = safeFloat(needsPercentage) + safeFloat(wantsPercentage) + safeFloat(savingsPercentage);
     if (Math.abs(total - 100) > 0.01) {
       toast({
         title: "Errore",
@@ -1640,7 +1641,7 @@ function BudgetSetup({ budgetSettings, onUpdate }: {
     });
   };
 
-  const total = parseFloat(needsPercentage || "0") + parseFloat(wantsPercentage || "0") + parseFloat(savingsPercentage || "0");
+  const total = safeFloat(needsPercentage) + safeFloat(wantsPercentage) + safeFloat(savingsPercentage);
 
   return (
     <Card>

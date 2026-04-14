@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -365,7 +366,7 @@ function QuickActionsDialog({ trigger, onUpdate }: { trigger: React.ReactNode; o
 
     addTransactionMutation.mutate({
       ...transactionData,
-      amount: parseFloat(transactionData.amount),
+      amount: safeFloat(transactionData.amount),
       date: new Date().toISOString().split('T')[0]
     });
   };
@@ -578,10 +579,10 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
 
   const handleUpdate = () => {
     updateGoalMutation.mutate({
-      currentAmount: parseFloat(updateData.currentAmount),
-      monthlyContribution: parseFloat(updateData.monthlyContribution),
+      currentAmount: safeFloat(updateData.currentAmount),
+      monthlyContribution: safeFloat(updateData.monthlyContribution),
       targetDate: updateData.targetDate,
-      expectedReturn: parseFloat(updateData.expectedReturn) / 100 // Convert percentage back to decimal
+      expectedReturn: safeFloat(updateData.expectedReturn) / 100 // Convert percentage back to decimal
     });
   };
 
@@ -668,10 +669,10 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
               <div className="space-y-3">
                 {linkedInvestments.map((investment) => {
                   // Use the correct field names from the API response
-                  const quantity = parseFloat(investment.shares?.toString() || investment.quantity?.toString() || '0');
-                  const currentPrice = parseFloat(investment.currentPrice?.toString() || '0');
-                  const averagePrice = parseFloat(investment.purchasePrice?.toString() || investment.averagePrice?.toString() || '0');
-                  const totalValue = parseFloat(investment.totalValue?.toString() || (quantity * currentPrice).toString() || '0');
+                  const quantity = safeFloat(investment.shares?.toString() || investment.quantity?.toString());
+                  const currentPrice = safeFloat(investment.currentPrice?.toString());
+                  const averagePrice = safeFloat(investment.purchasePrice?.toString() || investment.averagePrice?.toString());
+                  const totalValue = safeFloat(investment.totalValue?.toString() || (quantity * currentPrice).toString());
                   const totalCost = quantity * averagePrice;
                   const gainLoss = totalValue - totalCost;
                   const gainLossPercentage = totalCost > 0 ? (gainLoss / totalCost) * 100 : 0;
@@ -716,11 +717,11 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
                       <p className="text-lg font-bold text-trust-blue">
                         {formatEuro(linkedInvestments.reduce((sum, inv) => {
                           // Use totalValue from API if available, otherwise calculate
-                          const totalValue = parseFloat(inv.totalValue?.toString() || '0');
+                          const totalValue = safeFloat(inv.totalValue?.toString());
                           if (totalValue > 0) return sum + totalValue;
 
-                          const quantity = parseFloat(inv.shares?.toString() || inv.quantity?.toString() || '0');
-                          const currentPrice = parseFloat(inv.currentPrice?.toString() || '0');
+                          const quantity = safeFloat(inv.shares?.toString() || inv.quantity?.toString());
+                          const currentPrice = safeFloat(inv.currentPrice?.toString());
                           return sum + (quantity * currentPrice);
                         }, 0))}
                       </p>
@@ -730,29 +731,29 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
                       <p className={`font-bold ${
                         linkedInvestments.reduce((sum, inv) => {
                           // Use totalReturn from API if available
-                          const totalReturn = parseFloat(inv.totalReturn?.toString() || '0');
+                          const totalReturn = safeFloat(inv.totalReturn?.toString());
                           if (totalReturn !== 0) return sum + totalReturn;
 
-                          const quantity = parseFloat(inv.shares?.toString() || inv.quantity?.toString() || '0');
-                          const currentPrice = parseFloat(inv.currentPrice?.toString() || '0');
-                          const averagePrice = parseFloat(inv.purchasePrice?.toString() || inv.averagePrice?.toString() || '0');
+                          const quantity = safeFloat(inv.shares?.toString() || inv.quantity?.toString());
+                          const currentPrice = safeFloat(inv.currentPrice?.toString());
+                          const averagePrice = safeFloat(inv.purchasePrice?.toString() || inv.averagePrice?.toString());
                           return sum + (quantity * (currentPrice - averagePrice));
                         }, 0) >= 0 ? 'text-growth-green' : 'text-red-600'
                       }`}>
                         {(() => {
                           const totalGainLoss = linkedInvestments.reduce((sum, inv) => {
                             // Use totalReturn from API if available
-                            const totalReturn = parseFloat(inv.totalReturn?.toString() || '0');
+                            const totalReturn = safeFloat(inv.totalReturn?.toString());
                             if (totalReturn !== 0) return sum + totalReturn;
 
-                            const quantity = parseFloat(inv.shares?.toString() || inv.quantity?.toString() || '0');
-                            const currentPrice = parseFloat(inv.currentPrice?.toString() || '0');
-                            const averagePrice = parseFloat(inv.purchasePrice?.toString() || inv.averagePrice?.toString() || '0');
+                            const quantity = safeFloat(inv.shares?.toString() || inv.quantity?.toString());
+                            const currentPrice = safeFloat(inv.currentPrice?.toString());
+                            const averagePrice = safeFloat(inv.purchasePrice?.toString() || inv.averagePrice?.toString());
                             return sum + (quantity * (currentPrice - averagePrice));
                           }, 0);
                           const totalCost = linkedInvestments.reduce((sum, inv) => {
-                            const quantity = parseFloat(inv.shares?.toString() || inv.quantity?.toString() || '0');
-                            const averagePrice = parseFloat(inv.purchasePrice?.toString() || inv.averagePrice?.toString() || '0');
+                            const quantity = safeFloat(inv.shares?.toString() || inv.quantity?.toString());
+                            const averagePrice = safeFloat(inv.purchasePrice?.toString() || inv.averagePrice?.toString());
                             return sum + (quantity * averagePrice);
                           }, 0);
                           const totalPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
@@ -773,7 +774,7 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
               currentAmount={goal.currentAmount}
               monthlyContribution={goal.monthlyContribution}
               targetAmount={goal.targetAmount}
-              expectedReturn={parseFloat(goal.expectedReturn?.toString() || '0.10')}
+              expectedReturn={safeFloat(goal.expectedReturn?.toString(), 0.10)}
               targetDate={goal.targetDate}
             />
           </div>
@@ -916,7 +917,7 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
                       {deleteAction === 'transfer' && (
                         <select
                           value={targetGoalId || ''}
-                          onChange={(e) => setTargetGoalId(parseInt(e.target.value) || null)}
+                          onChange={(e) => setTargetGoalId(safeInt(e.target.value) || null)}
                           className="mt-2 w-full p-2 border rounded"
                         >
                           <option value="">Seleziona obiettivo...</option>
@@ -976,8 +977,8 @@ function GoalDetailDialog({ goal, trigger }: { goal: Goal; trigger: React.ReactN
 }
 
 function GoalCard({ goal }: { goal: Goal }) {
-  const safeCurrentAmount = parseFloat(goal.currentAmount?.toString() || '0');
-  const safeTargetAmount = parseFloat(goal.targetAmount?.toString() || '1');
+  const safeCurrentAmount = safeFloat(goal.currentAmount?.toString());
+  const safeTargetAmount = safeFloat(goal.targetAmount?.toString(), 1);
   const progressPercentage = Math.min(100, (safeCurrentAmount / safeTargetAmount) * 100);
   const remainingMonths = Math.max(0, Math.ceil((new Date(goal.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 30)));
 
@@ -1028,7 +1029,7 @@ function GoalCard({ goal }: { goal: Goal }) {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-medium-gray">Contributo mensile</p>
-                <p className="font-semibold text-trust-blue">{formatEuro(parseFloat(goal.monthlyContribution?.toString() || '0'))}</p>
+                <p className="font-semibold text-trust-blue">{formatEuro(safeFloat(goal.monthlyContribution?.toString()))}</p>
               </div>
               <div>
                 <p className="text-medium-gray">Tempo rimanente</p>
@@ -1200,7 +1201,7 @@ export function GoalCreationDialog({ trigger }: { trigger: React.ReactNode }) {
     createGoalMutation.mutate({
       name: customGoal.name,
       type: selectedTemplate?.id || 'custom',
-      targetAmount: parseFloat(customGoal.targetAmount),
+      targetAmount: safeFloat(customGoal.targetAmount),
       currentAmount: 0, // Always start with 0, user can add funds later
       monthlyContribution: parseFloat(customGoal.monthlyContribution) || 0,
       targetDate: customGoal.targetDate,
@@ -1347,7 +1348,7 @@ export function GoalCreationDialog({ trigger }: { trigger: React.ReactNode }) {
                             </div>
                             <div className="flex justify-between items-center text-xs text-gray-400">
                               <span>Quantità: {investment.quantity || 0}</span>
-                              <span>Valore: €{((parseFloat(investment.quantity || "0") * parseFloat(investment.currentPrice || investment.averagePrice || "0"))).toFixed(2)}</span>
+                              <span>Valore: €{((safeFloat(investment.quantity) * safeFloat(investment.currentPrice || investment.averagePrice))).toFixed(2)}</span>
                             </div>
                           </div>
                         </label>
@@ -1421,16 +1422,16 @@ export default function Goals() {
 
   const netWorth = (dashboardData as any)?.financialSummary?.netWorth || 0;
   const totalGoalValue = goals?.reduce((sum, goal) => {
-    const target = parseFloat(goal.targetAmount?.toString() || '0');
+    const target = safeFloat(goal.targetAmount?.toString());
     return sum + (isNaN(target) ? 0 : target);
   }, 0) || 0;
   const currentGoalValue = goals?.reduce((sum, goal) => {
-    const current = parseFloat(goal.currentAmount?.toString() || '0');
+    const current = safeFloat(goal.currentAmount?.toString());
     return sum + (isNaN(current) ? 0 : current);
   }, 0) || 0;
   const completedGoals = goals?.filter(goal => {
-    const current = parseFloat(goal.currentAmount?.toString() || '0');
-    const target = parseFloat(goal.targetAmount?.toString() || '0');
+    const current = safeFloat(goal.currentAmount?.toString());
+    const target = safeFloat(goal.targetAmount?.toString());
     return target > 0 && (current / target) >= 1;
   }).length || 0;
 

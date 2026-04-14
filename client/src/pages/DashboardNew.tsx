@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -138,10 +139,10 @@ export default function DashboardNew() {
     }, {} as Record<string, number>);
 
   // Calcola budget vs reale
-  const monthlyIncomeFromSettings = parseFloat(budgetSettings?.monthlyIncome || '0');
-  const needsBudget = (monthlyIncomeFromSettings * parseFloat(budgetSettings?.needsPercentage || '50')) / 100;
-  const wantsBudget = (monthlyIncomeFromSettings * parseFloat(budgetSettings?.wantsPercentage || '30')) / 100;
-  const savingsBudget = (monthlyIncomeFromSettings * parseFloat(budgetSettings?.savingsPercentage || '20')) / 100;
+  const monthlyIncomeFromSettings = safeFloat(budgetSettings?.monthlyIncome);
+  const needsBudget = (monthlyIncomeFromSettings * safeFloat(budgetSettings?.needsPercentage, 50)) / 100;
+  const wantsBudget = (monthlyIncomeFromSettings * safeFloat(budgetSettings?.wantsPercentage, 30)) / 100;
+  const savingsBudget = (monthlyIncomeFromSettings * safeFloat(budgetSettings?.savingsPercentage, 20)) / 100;
 
   // Simulatore semplificato
   const calculateFutureValue = () => {
@@ -300,7 +301,7 @@ export default function DashboardNew() {
                               : (transaction.description || transaction.category)}
                           </p>
                           <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
-                            <p className="text-xs text-gray-500 flex-shrink-0">{format(new Date(transaction.date), 'dd MMM', { locale: it })}</p>
+                            <p className="text-xs text-gray-500 flex-shrink-0">{(() => { const p = transaction.date.split('-'); return format(new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)), 'dd MMM', { locale: it }); })()}</p>
                             {transaction.category && (
                               <>
                                 <span className="text-xs text-gray-400 flex-shrink-0">•</span>

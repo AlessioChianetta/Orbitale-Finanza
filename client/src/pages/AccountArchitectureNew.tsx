@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { safeFloat, safeInt } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
