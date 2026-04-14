@@ -2558,6 +2558,14 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
   );
 }
 
+// Format a Date using local time zone (avoids UTC shift from toISOString)
+function formatLocalDate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function Transactions() {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [startDate, setStartDate] = useState("");
@@ -2568,22 +2576,22 @@ export default function Transactions() {
   // Compute the date range for the API based on the selected period
   const { apiStartDate, apiEndDate } = useMemo(() => {
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = formatLocalDate(now);
 
     switch (selectedPeriod) {
       case 'today':
         return { apiStartDate: todayStr, apiEndDate: todayStr };
       case 'week': {
-        const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return { apiStartDate: start.toISOString().split('T')[0], apiEndDate: todayStr };
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+        return { apiStartDate: formatLocalDate(start), apiEndDate: todayStr };
       }
       case 'month': {
         const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        return { apiStartDate: start.toISOString().split('T')[0], apiEndDate: todayStr };
+        return { apiStartDate: formatLocalDate(start), apiEndDate: todayStr };
       }
       case 'year': {
         const start = new Date(now.getFullYear(), 0, 1);
-        return { apiStartDate: start.toISOString().split('T')[0], apiEndDate: todayStr };
+        return { apiStartDate: formatLocalDate(start), apiEndDate: todayStr };
       }
       case 'custom':
         if (startDate && endDate) {
