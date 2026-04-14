@@ -448,79 +448,46 @@ router.post('/save-configuration', requireAuth, async (req, res) => {
     const { fixedCosts: fixedCostsData, laborSettings, advancedCosts, debts, salesConversionData, unitVariableCosts, month } = req.body;
     const monthKey = month || 'default'; // Usa il mese dal body o default
 
-    console.log('💾 [BACKEND SAVE] === INIZIO SALVATAGGIO ===');
-    console.log('💾 [BACKEND SAVE] Owner ID:', userId);
-    console.log('💾 [BACKEND SAVE] Month Key:', monthKey);
-    console.log('💾 [BACKEND SAVE] Fixed Costs ricevuti:', JSON.stringify(fixedCostsData, null, 2));
-    console.log('💾 [BACKEND SAVE] Labor Settings ricevuti:', JSON.stringify(laborSettings, null, 2));
-    console.log('💾 [BACKEND SAVE] Advanced Costs ricevuti:', JSON.stringify(advancedCosts, null, 2));
-    console.log('💾 [BACKEND SAVE] Debts ricevuti:', JSON.stringify(debts, null, 2));
-    console.log('💾 [BACKEND SAVE] Sales Conversion Data ricevuti:', JSON.stringify(salesConversionData, null, 2));
-    console.log('💾 [BACKEND SAVE] Unit Variable Costs ricevuti:', JSON.stringify(unitVariableCosts, null, 2));
-
-    // Salva Costi Fissi
-    if (fixedCostsData && fixedCostsData.length > 0) {
-      await db.transaction(async (tx) => {
-        // Disattiva i costi fissi esistenti per questo mese/utente prima di inserirne di nuovi
-        console.log('💾 [DB WRITE] 🔄 Disattivazione costi fissi esistenti per userId:', userId, 'monthKey:', monthKey);
-        const updateResult = await tx.update(fixedCosts)
+    await db.transaction(async (tx) => {
+      if (fixedCostsData && fixedCostsData.length > 0) {
+        await tx.update(fixedCosts)
           .set({ isActive: false })
           .where(and(eq(fixedCosts.userId, userId), eq(fixedCosts.monthKey, monthKey)));
-        console.log('💾 [DB WRITE] ✅ Costi fissi disattivati:', updateResult);
 
         for (const cost of fixedCostsData) {
-          console.log('💾 [DB WRITE] 📝 Inserimento costo fisso:', { userId, monthKey, name: cost.name, monthlyAmount: cost.monthlyAmount });
-          const insertResult = await tx.insert(fixedCosts).values({
+          await tx.insert(fixedCosts).values({
             userId,
             monthKey,
             name: cost.name,
             monthlyAmount: cost.monthlyAmount.toString(),
             isActive: true,
           });
-          console.log('💾 [DB WRITE] ✅ Costo fisso inserito nel DB:', insertResult);
         }
-      });
-      console.log('💾 [BACKEND SAVE] Costi fissi salvati con successo.');
-    }
+      }
 
-    // Salva Costi Variabili (Parametri)
-    if (advancedCosts && advancedCosts.variable.length > 0) {
-      await db.transaction(async (tx) => {
-        // Disattiva i costi variabili esistenti
-        console.log('💾 [DB WRITE] 🔄 Disattivazione costi variabili esistenti per userId:', userId, 'monthKey:', monthKey);
-        const updateResult = await tx.update(variableCosts)
+      if (advancedCosts && advancedCosts.variable.length > 0) {
+        await tx.update(variableCosts)
           .set({ isActive: false })
           .where(and(eq(variableCosts.userId, userId), eq(variableCosts.monthKey, monthKey)));
-        console.log('💾 [DB WRITE] ✅ Costi variabili disattivati:', updateResult);
 
         for (const cost of advancedCosts.variable) {
-          console.log('💾 [DB WRITE] 📝 Inserimento costo variabile:', { userId, monthKey, name: cost.name, unitCost: cost.unitCost });
-          const insertResult = await tx.insert(variableCosts).values({
+          await tx.insert(variableCosts).values({
             userId,
             monthKey,
             name: cost.name,
             unitCost: cost.unitCost.toString(),
             isActive: true,
           });
-          console.log('💾 [DB WRITE] ✅ Costo variabile inserito nel DB:', insertResult);
         }
-      });
-      console.log('💾 [BACKEND SAVE] Costi variabili (parametri) salvati con successo.');
-    }
+      }
 
-    // Salva Debiti (Costi Fissi)
-    if (debts && debts.length > 0) {
-      await db.transaction(async (tx) => {
-        // Disattiva i debiti esistenti
-        console.log('💾 [DB WRITE] 🔄 Disattivazione debiti esistenti per userId:', userId, 'monthKey:', monthKey);
-        const updateResult = await tx.update(fixedCosts)
+      if (debts && debts.length > 0) {
+        await tx.update(fixedCosts)
           .set({ isActive: false })
           .where(and(eq(fixedCosts.userId, userId), eq(fixedCosts.monthKey, monthKey), eq(fixedCosts.category, 'debt')));
-        console.log('💾 [DB WRITE] ✅ Debiti disattivati:', updateResult);
 
         for (const debt of debts) {
-          console.log('💾 [DB WRITE] 📝 Inserimento debito:', { userId, monthKey, name: debt.name, amount: debt.amount });
-          const insertResult = await tx.insert(fixedCosts).values({
+          await tx.insert(fixedCosts).values({
             userId,
             monthKey,
             name: debt.name,
@@ -530,76 +497,33 @@ router.post('/save-configuration', requireAuth, async (req, res) => {
             startDate: new Date(),
             isActive: true,
           });
-          console.log('💾 [DB WRITE] ✅ Debito inserito nel DB:', insertResult);
         }
-      });
-      console.log('💾 [BACKEND SAVE] Debiti salvati con successo.');
-    }
+      }
 
-    // Salva Impostazioni Lavoro (Costi Variabili)
-    if (laborSettings) {
-      await db.transaction(async (tx) => {
-        // Disattiva le impostazioni lavoro esistenti
-        console.log('💾 [DB WRITE] 🔄 Disattivazione labor settings esistenti per userId:', userId, 'monthKey:', monthKey);
-        const updateResult = await tx.update(variableCosts)
+      if (laborSettings) {
+        await tx.update(variableCosts)
           .set({ isActive: false })
           .where(and(eq(variableCosts.userId, userId), eq(variableCosts.monthKey, monthKey), eq(variableCosts.category, 'labor')));
-        console.log('💾 [DB WRITE] ✅ Labor settings disattivati:', updateResult);
 
-        // Salva le nuove impostazioni lavoro
-        console.log('💾 [DB WRITE] 📝 Inserimento hourlyWage:', laborSettings.hourlyWage);
-        const insert1 = await tx.insert(variableCosts).values({
-          userId,
-          monthKey,
-          name: 'hourlyWage',
-          description: 'Salario orario',
-          category: 'labor',
-          unitType: 'hourly',
-          unitCost: laborSettings.hourlyWage.toString(),
-          isActive: true,
+        await tx.insert(variableCosts).values({
+          userId, monthKey, name: 'hourlyWage', description: 'Salario orario',
+          category: 'labor', unitType: 'hourly', unitCost: laborSettings.hourlyWage.toString(), isActive: true,
         });
-        console.log('💾 [DB WRITE] ✅ hourlyWage inserito nel DB:', insert1);
-
-        console.log('💾 [DB WRITE] 📝 Inserimento hoursPerWeek:', laborSettings.hoursPerWeek);
-        const insert2 = await tx.insert(variableCosts).values({
-          userId,
-          monthKey,
-          name: 'hoursPerWeek',
-          description: 'Ore settimanali',
-          category: 'labor',
-          unitType: 'hours',
-          unitCost: laborSettings.hoursPerWeek.toString(),
-          isActive: true,
+        await tx.insert(variableCosts).values({
+          userId, monthKey, name: 'hoursPerWeek', description: 'Ore settimanali',
+          category: 'labor', unitType: 'hours', unitCost: laborSettings.hoursPerWeek.toString(), isActive: true,
         });
-        console.log('💾 [DB WRITE] ✅ hoursPerWeek inserito nel DB:', insert2);
-
-        console.log('💾 [DB WRITE] 📝 Inserimento weeksPerMonth:', laborSettings.weeksPerMonth);
-        const insert3 = await tx.insert(variableCosts).values({
-          userId,
-          monthKey,
-          name: 'weeksPerMonth',
-          description: 'Settimane per mese',
-          category: 'labor',
-          unitType: 'weeks',
-          unitCost: laborSettings.weeksPerMonth.toString(),
-          isActive: true,
+        await tx.insert(variableCosts).values({
+          userId, monthKey, name: 'weeksPerMonth', description: 'Settimane per mese',
+          category: 'labor', unitType: 'weeks', unitCost: laborSettings.weeksPerMonth.toString(), isActive: true,
         });
-        console.log('💾 [DB WRITE] ✅ weeksPerMonth inserito nel DB:', insert3);
-      });
-      console.log('💾 [BACKEND SAVE] Impostazioni lavoro salvate con successo.');
-    }
+      }
 
-    console.log('💾 [STEP 1 - BACKEND] === SALVATAGGIO SALES CONVERSION DATA ===');
-    // Salva salesConversionData nella tabella dedicata
-    if (salesConversionData && typeof salesConversionData === 'object') {
-      try {
-        const existingSalesData = await db
+      if (salesConversionData && typeof salesConversionData === 'object') {
+        const existingSalesData = await tx
           .select()
           .from(salesConversionTable)
-          .where(and(
-            eq(salesConversionTable.userId, userId),
-            eq(salesConversionTable.monthKey, monthKey)
-          ))
+          .where(and(eq(salesConversionTable.userId, userId), eq(salesConversionTable.monthKey, monthKey)))
           .limit(1);
 
         const salesDataToSave = {
@@ -614,43 +538,18 @@ router.post('/save-configuration', requireAuth, async (req, res) => {
         };
 
         if (existingSalesData.length > 0) {
-          console.log(`💾 [DB WRITE] 🔄 Aggiornamento sales conversion data per userId: ${userId}, monthKey: ${monthKey}`);
-          await db
-            .update(salesConversionTable)
-            .set(salesDataToSave)
-            .where(and(
-              eq(salesConversionTable.userId, userId),
-              eq(salesConversionTable.monthKey, monthKey)
-            ));
-          console.log(`💾 [DB WRITE] ✅ Sales conversion data aggiornato per mese ${monthKey}`);
+          await tx.update(salesConversionTable).set(salesDataToSave)
+            .where(and(eq(salesConversionTable.userId, userId), eq(salesConversionTable.monthKey, monthKey)));
         } else {
-          console.log(`💾 [DB WRITE] 📝 Inserimento sales conversion data per userId: ${userId}, monthKey: ${monthKey}`);
-          await db
-            .insert(salesConversionTable)
-            .values({
-              userId,
-              monthKey,
-              ...salesDataToSave
-            });
-          console.log(`💾 [DB WRITE] ✅ Sales conversion data creato per ${monthKey}`);
+          await tx.insert(salesConversionTable).values({ userId, monthKey, ...salesDataToSave });
         }
-      } catch (error: any) {
-        console.error(`❌ ERRORE salvando sales conversion data:`, error);
       }
-    }
-    console.log('💾 [STEP 2 - BACKEND] === FINE SALVATAGGIO SALES CONVERSION DATA ===');
 
-    console.log('💾 [STEP 3 - BACKEND] === SALVATAGGIO UNIT VARIABLE COSTS ===');
-    // Salva unitVariableCosts nella tabella dedicata
-    if (unitVariableCosts && typeof unitVariableCosts === 'object') {
-      try {
-        const existingUnitCosts = await db
+      if (unitVariableCosts && typeof unitVariableCosts === 'object') {
+        const existingUnitCosts = await tx
           .select()
           .from(unitVariableCostsTable)
-          .where(and(
-            eq(unitVariableCostsTable.userId, userId),
-            eq(unitVariableCostsTable.monthKey, monthKey)
-          ))
+          .where(and(eq(unitVariableCostsTable.userId, userId), eq(unitVariableCostsTable.monthKey, monthKey)))
           .limit(1);
 
         const unitCostsToSave = {
@@ -663,33 +562,13 @@ router.post('/save-configuration', requireAuth, async (req, res) => {
         };
 
         if (existingUnitCosts.length > 0) {
-          console.log(`💾 [DB WRITE] 🔄 Aggiornamento unit variable costs per userId: ${userId}, monthKey: ${monthKey}`);
-          await db
-            .update(unitVariableCostsTable)
-            .set(unitCostsToSave)
-            .where(and(
-              eq(unitVariableCostsTable.userId, userId),
-              eq(unitVariableCostsTable.monthKey, monthKey)
-            ));
-          console.log(`💾 [DB WRITE] ✅ Unit variable costs aggiornato per mese ${monthKey}`);
+          await tx.update(unitVariableCostsTable).set(unitCostsToSave)
+            .where(and(eq(unitVariableCostsTable.userId, userId), eq(unitVariableCostsTable.monthKey, monthKey)));
         } else {
-          console.log(`💾 [DB WRITE] 📝 Inserimento unit variable costs per userId: ${userId}, monthKey: ${monthKey}`);
-          await db
-            .insert(unitVariableCostsTable)
-            .values({
-              userId,
-              monthKey,
-              ...unitCostsToSave
-            });
-          console.log(`💾 [DB WRITE] ✅ Unit variable costs creato per ${monthKey}`);
+          await tx.insert(unitVariableCostsTable).values({ userId, monthKey, ...unitCostsToSave });
         }
-      } catch (error: any) {
-        console.error(`❌ ERRORE salvando unit variable costs:`, error);
       }
-    }
-    console.log('💾 [STEP 4 - BACKEND] === FINE SALVATAGGIO UNIT VARIABLE COSTS ===');
-
-    console.log('📥 [STEP 5 - BACKEND] === PREPARAZIONE RISPOSTA ===');
+    });
     const responseData = {
       success: true,
       message: 'Configurazione salvata con successo',

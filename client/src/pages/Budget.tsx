@@ -1246,11 +1246,7 @@ function CategoryBudgetManager({
                                       {t.description || t.merchant || 'Transazione'}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {new Date(t.date).toLocaleDateString('it-IT', { 
-                                        day: 'numeric', 
-                                        month: 'short', 
-                                        year: 'numeric' 
-                                      })}
+                                      {toLocaleDateSafe(t.date)}
                                     </p>
                                   </div>
                                   <span className="text-sm font-bold text-red-600">

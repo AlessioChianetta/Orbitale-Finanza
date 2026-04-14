@@ -1515,7 +1515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const transactionHeaders = ['Data', 'Descrizione', 'Categoria', 'Importo'];
       const transactionRows = topTransactions.map((t: any) => [
-        new Date(t.date).toLocaleDateString('it-IT'),
+        (() => { const parts = t.date?.split('-'); return parts?.length === 3 ? new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2])).toLocaleDateString('it-IT') : t.date || ''; })(),
         (t.description || t.category || 'N/A').substring(0, 25) + (t.description?.length > 25 ? '...' : ''),
         t.category || 'Altro',
         `€${safeFloat(t.amount).toFixed(2)}`
