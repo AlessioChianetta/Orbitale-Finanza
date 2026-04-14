@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+
+function safeFloat(value: string | number | null | undefined, fallback: number = 0): number {
+  if (value === null || value === undefined) return fallback;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+}
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -669,8 +675,8 @@ export default function Investments() {
       return;
     }
 
-    const quantity = parseFloat(newInvestment.shares);
-    const unitPrice = parseFloat(newInvestment.purchasePrice);
+    const quantity = safeFloat(newInvestment.shares);
+    const unitPrice = safeFloat(newInvestment.purchasePrice);
     const totalAmount = quantity * unitPrice;
 
     if (quantity <= 0 || unitPrice <= 0) {
@@ -891,7 +897,7 @@ export default function Investments() {
     });
 
     // Calculate real statistics based on historical data
-    const returns = historicalData.map(d => parseFloat(d.return));
+    const returns = historicalData.map(d => safeFloat(d.return));
     const avgReturn = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
     const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - avgReturn, 2), 0) / returns.length;
     const stdDev = Math.sqrt(variance);
@@ -905,7 +911,7 @@ export default function Investments() {
     let peak = 1000;
     let maxDrawdown = 0;
     historicalData.forEach(data => {
-      const value = parseFloat(data.cumulativeValue);
+      const value = safeFloat(data.cumulativeValue);
       if (value > peak) peak = value;
       const drawdown = (peak - value) / peak;
       if (drawdown > maxDrawdown) maxDrawdown = drawdown;
@@ -1547,13 +1553,13 @@ export default function Investments() {
                     <p className="text-sm text-blue-800">
                       <strong>Saldo disponibile:</strong> {formatEuro(getSourceAccountBalance())}
                       <br />
-                      <strong>Importo investimento:</strong> {newInvestment.shares && newInvestment.purchasePrice ? formatEuro(parseFloat(newInvestment.shares) * parseFloat(newInvestment.purchasePrice)) : '€0'}
-                      {newInvestment.shares && newInvestment.purchasePrice && getSourceAccountBalance() < (parseFloat(newInvestment.shares) * parseFloat(newInvestment.purchasePrice)) && (
+                      <strong>Importo investimento:</strong> {newInvestment.shares && newInvestment.purchasePrice ? formatEuro(safeFloat(newInvestment.shares) * safeFloat(newInvestment.purchasePrice)) : '€0'}
+                      {newInvestment.shares && newInvestment.purchasePrice && getSourceAccountBalance() < (safeFloat(newInvestment.shares) * safeFloat(newInvestment.purchasePrice)) && (
                         <span className="block text-red-600 font-medium mt-1">
                           ⚠️ Saldo insufficiente per questo investimento!
                         </span>
                       )}
-                      {newInvestment.shares && newInvestment.purchasePrice && getSourceAccountBalance() >= (parseFloat(newInvestment.shares) * parseFloat(newInvestment.purchasePrice)) && (
+                      {newInvestment.shares && newInvestment.purchasePrice && getSourceAccountBalance() >= (safeFloat(newInvestment.shares) * safeFloat(newInvestment.purchasePrice)) && (
                         <span className="block text-green-600 font-medium mt-1">
                           ✅ Saldo sufficiente per questo investimento
                         </span>
@@ -1626,16 +1632,16 @@ export default function Investments() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-blue-600">Quantità:</span>
-                          <div className="font-bold">{parseFloat(newInvestment.shares).toLocaleString()}</div>
+                          <div className="font-bold">{safeFloat(newInvestment.shares).toLocaleString()}</div>
                         </div>
                         <div>
                           <span className="text-blue-600">Prezzo unitario:</span>
-                          <div className="font-bold">{formatEuro(parseFloat(newInvestment.purchasePrice))}</div>
+                          <div className="font-bold">{formatEuro(safeFloat(newInvestment.purchasePrice))}</div>
                         </div>
                         <div>
                           <span className="text-blue-600">Importo totale investito:</span>
                           <div className="font-bold text-lg text-blue-800">
-                            {formatEuro(parseFloat(newInvestment.shares) * parseFloat(newInvestment.purchasePrice))}
+                            {formatEuro(safeFloat(newInvestment.shares) * safeFloat(newInvestment.purchasePrice))}
                           </div>
                         </div>
                       </div>
@@ -2145,8 +2151,8 @@ export default function Investments() {
                     {selectedPortfolioDetails.historicalData?.slice(0, 8).map((data: any, index: number) => (
                       <div key={index} className="text-center p-3 bg-gray-50 rounded-lg">
                         <div className="font-semibold text-sm">{data.month}</div>
-                        <div className={`text-lg font-bold ${parseFloat(data.return) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {parseFloat(data.return) >= 0 ? '+' : ''}{data.return}%
+                        <div className={`text-lg font-bold ${safeFloat(data.return) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {safeFloat(data.return) >= 0 ? '+' : ''}{data.return}%
                         </div>
                         <div className="text-xs text-gray-600">€{data.cumulativeValue}</div>
                       </div>
