@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -2825,67 +2830,101 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Date and Period Filters - Compact Horizontal Design */}
+        {/* Period Filter - Pill Buttons + Date Range Picker */}
         <div className="mt-6 mb-8">
           <Card className="border-0 shadow-lg bg-gradient-to-r from-white via-blue-50/20 to-indigo-50/20 backdrop-blur-sm overflow-hidden relative">
-            {/* Subtle decorative elements */}
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/15 to-indigo-500/15 rounded-full -mr-10 -mt-10"></div>
+            <CardContent className="p-4 relative z-10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 justify-between flex-wrap">
 
-          <CardContent className="p-4 relative z-10">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg shadow-lg">
-                  <Calendar className="w-5 h-5 text-white" />
+                {/* Pill Buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    { value: 'today', label: 'Oggi' },
+                    { value: 'week', label: 'Settimana' },
+                    { value: 'month', label: 'Mese' },
+                    { value: 'year', label: 'Anno' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => setSelectedPeriod(value)}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                        selectedPeriod === value
+                          ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                          : 'bg-white text-gray-600 hover:bg-indigo-50 hover:text-indigo-700 shadow border border-gray-200/80'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+
+                  {/* Custom Date Range Picker */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        onClick={() => setSelectedPeriod('custom')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                          selectedPeriod === 'custom'
+                            ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                            : 'bg-white text-gray-600 hover:bg-indigo-50 hover:text-indigo-700 shadow border border-gray-200/80'
+                        }`}
+                      >
+                        <Calendar className="w-4 h-4" />
+                        {selectedPeriod === 'custom' && startDate && endDate
+                          ? `${format(new Date(startDate + 'T00:00:00'), 'd MMM', { locale: it })} → ${format(new Date(endDate + 'T00:00:00'), 'd MMM yy', { locale: it })}`
+                          : 'Personalizzato'}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 shadow-2xl border-0 rounded-2xl overflow-hidden" align="start">
+                      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 text-white">
+                        <p className="font-bold text-sm">Seleziona intervallo</p>
+                        <p className="text-indigo-200 text-xs mt-0.5">
+                          {startDate && endDate
+                            ? `${format(new Date(startDate + 'T00:00:00'), 'd MMMM yyyy', { locale: it })} → ${format(new Date(endDate + 'T00:00:00'), 'd MMMM yyyy', { locale: it })}`
+                            : startDate
+                              ? `Dal ${format(new Date(startDate + 'T00:00:00'), 'd MMMM yyyy', { locale: it })} — clicca la data finale`
+                              : 'Clicca la data di inizio, poi quella di fine'}
+                        </p>
+                      </div>
+                      <CalendarPicker
+                        mode="range"
+                        numberOfMonths={2}
+                        locale={it}
+                        selected={
+                          startDate && endDate
+                            ? { from: new Date(startDate + 'T00:00:00'), to: new Date(endDate + 'T00:00:00') }
+                            : startDate
+                              ? { from: new Date(startDate + 'T00:00:00'), to: undefined }
+                              : undefined
+                        }
+                        onSelect={(range: DateRange | undefined) => {
+                          if (range?.from) {
+                            setStartDate(formatLocalDate(range.from));
+                          } else {
+                            setStartDate('');
+                            setEndDate('');
+                          }
+                          if (range?.to) {
+                            setEndDate(formatLocalDate(range.to));
+                          } else if (!range?.from) {
+                            setEndDate('');
+                          }
+                        }}
+                        disabled={{ after: new Date() }}
+                        className="p-3"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">Filtri Periodo</h3>
-                  <p className="text-gray-600 text-xs">Seleziona il periodo da visualizzare</p>
-                </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-2 shadow border border-white/50">
-                  <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">Periodo:</label>
-                  <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                    <SelectTrigger className="w-32 h-8 text-sm font-medium border-0 bg-white shadow-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="border-0 shadow-xl">
-                      <SelectItem value="today" className="font-medium">🗓️ Oggi</SelectItem>
-                      <SelectItem value="week" className="font-medium">📅 Settimana</SelectItem>
-                      <SelectItem value="month" className="font-medium">🗓️ Mese</SelectItem>
-                      <SelectItem value="year" className="font-medium">📆 Anno</SelectItem>
-                      <SelectItem value="custom" className="font-medium">⚙️ Personalizzato</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedPeriod === 'custom' && (
-                  <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-2 shadow border border-white/50">
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-32 h-8 text-xs font-medium border-0 bg-white shadow-sm"
-                    />
-                    <div className="w-2 h-0.5 bg-gray-400 rounded-full"></div>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-32 h-8 text-xs font-medium border-0 bg-white shadow-sm"
-                    />
-                  </div>
-                )}
-
+                {/* Live badge */}
                 <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg px-3 py-2 shadow border border-green-200/50">
                   <div className="w-2 h-2 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
                   <span className="text-xs text-green-700 font-bold whitespace-nowrap">Live</span>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Ultra Compact Summary Cards - Horizontal Design */}
