@@ -2585,7 +2585,7 @@ export default function Transactions() {
     queryFn: async () => {
       const url = (apiStartDate && apiEndDate)
         ? `/api/transactions?startDate=${apiStartDate}&endDate=${apiEndDate}`
-        : '/api/transactions';
+        : '/api/transactions?limit=10000';
       const res = await fetch(url, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch transactions');
       return res.json();

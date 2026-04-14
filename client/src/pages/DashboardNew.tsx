@@ -91,6 +91,11 @@ export default function DashboardNew() {
 
   const { data: transactionsData } = useQuery<Transaction[]>({
     queryKey: ['/api/transactions'],
+    queryFn: async () => {
+      const res = await fetch('/api/transactions?limit=10000', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json();
+    },
   });
 
   const { data: budgetSettings } = useQuery({

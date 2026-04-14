@@ -2125,20 +2125,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction endpoints
-  app.get('/api/transactions', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = parseInt(req.user.id);
-      const limit = parseInt(req.query.limit) || 50;
-      const startDate = req.query.startDate as string | undefined;
-      const endDate = req.query.endDate as string | undefined;
-      const transactions = await storage.getUserTransactions(userId, limit, startDate, endDate);
-      res.json(transactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      res.status(500).json({ message: "Failed to fetch transactions" });
-    }
-  });
-
   app.delete('/api/transactions/:id', isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);

@@ -499,22 +499,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Transaction operations
-  async getUserTransactions(userId: number, limit = 50, startDate?: string, endDate?: string): Promise<Transaction[]> {
-    if (startDate && endDate) {
-      return await db
-        .select()
-        .from(transactions)
-        .where(and(
-          eq(transactions.userId, userId),
-          gte(transactions.date, startDate),
-          lte(transactions.date, endDate)
-        ))
-        .orderBy(desc(transactions.date));
+  async getUserTransactions(userId: number, limit = 10000, startDate?: string, endDate?: string): Promise<Transaction[]> {
+    const conditions = [eq(transactions.userId, userId)];
+
+    if (startDate) {
+      conditions.push(gte(transactions.date, startDate));
     }
+    if (endDate) {
+      conditions.push(lte(transactions.date, endDate));
+    }
+
     return await db
       .select()
       .from(transactions)
-      .where(eq(transactions.userId, userId))
+      .where(and(...conditions))
       .orderBy(desc(transactions.date))
       .limit(limit);
   }
