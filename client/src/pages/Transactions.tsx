@@ -3224,14 +3224,18 @@ export default function Transactions() {
                             <div key={category}>
                               <button
                                 onClick={() => toggleCategoryExpansion(category)}
-                                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors duration-150 group"
+                                className={`w-full flex items-center justify-between px-5 py-3.5 transition-colors duration-150 group border-l-2 ${
+                                  isExpanded
+                                    ? `bg-gray-50/80 ${config.bar.replace('bg-', 'border-')}`
+                                    : 'border-transparent hover:bg-gray-50/60 hover:border-gray-200'
+                                }`}
                               >
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.accent.split(' ')[0]}`}>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-150 ${config.accent.split(' ')[0]} ${isExpanded ? 'scale-110' : 'group-hover:scale-105'}`}>
                                     <Icon className={`w-4 h-4 ${config.accent.split(' ')[1]}`} />
                                   </div>
                                   <div className="text-left flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-800 truncate">{category}</p>
+                                    <p className={`text-sm font-medium truncate transition-colors duration-150 ${isExpanded ? 'text-gray-900' : 'text-gray-700'}`}>{category}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                       <div className="flex-1 h-1 rounded-full bg-gray-100 max-w-[80px]">
                                         <div className={`h-1 rounded-full ${config.bar}`} style={{ width: `${pct}%` }}></div>
