@@ -728,7 +728,12 @@ function CategoryBudgetManager({
 
   // Get real spending data using the transactions from props
   const { data: transactionsData } = useQuery<Transaction[]>({
-    queryKey: ['/api/transactions']
+    queryKey: ['/api/transactions', 'all'],
+    queryFn: async () => {
+      const res = await fetch('/api/transactions?limit=10000', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json();
+    }
   });
 
   const getRealSpendingByCategory = (transactions: Transaction[]) => {
@@ -1715,7 +1720,12 @@ export default function Budget() {
   });
 
   const { data: transactions } = useQuery<Transaction[]>({
-    queryKey: ['/api/transactions']
+    queryKey: ['/api/transactions', 'all'],
+    queryFn: async () => {
+      const res = await fetch('/api/transactions?limit=10000', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json();
+    }
   });
 
   const { data: dashboardData } = useQuery({
