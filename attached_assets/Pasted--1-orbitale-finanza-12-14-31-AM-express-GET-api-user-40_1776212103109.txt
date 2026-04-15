@@ -1,0 +1,107 @@
+
+1|orbitale-finanza  | 12:14:31 AM [express] GET /api/user 401 in 2ms
+1|orbitale-finanza  | 12:14:46 AM [express] POST /api/login 200 in 533ms :: {"id":18,"email":"fernandovillon96@hotmail.com"…
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 10,
+1|orbitale-finanza  |   startDate: undefined,
+1|orbitale-finanza  |   endDate: undefined,
+1|orbitale-finanza  |   conditionsCount: 1
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 1000,
+1|orbitale-finanza  |   startDate: undefined,
+1|orbitale-finanza  |   endDate: undefined,
+1|orbitale-finanza  |   conditionsCount: 1
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [TRANSACTIONS] Richiesta: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   startDate: undefined,
+1|orbitale-finanza  |   endDate: undefined,
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   rawQuery: { limit: '10000' }
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   startDate: undefined,
+1|orbitale-finanza  |   endDate: undefined,
+1|orbitale-finanza  |   conditionsCount: 1
+1|orbitale-finanza  | }
+1|orbitale-finanza  | 12:14:46 AM [express] GET /api/account-architecture 304 in 269ms :: {"id":28,"userId":18,"monthlyInco…
+1|orbitale-finanza  | 12:14:46 AM [express] GET /api/budget-settings 200 in 193ms
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | 12:14:46 AM [express] GET /api/custom-accounts 304 in 229ms :: [{"id":11,"userId":18,"name":"BPM cont…
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | [TRANSACTIONS] Risultati: 301 trovate | date range: { primo: '2025-01-25', ultimo: '2026-04-14' }
+1|orbitale-finanza  | 12:14:46 AM [express] GET /api/dashboard-unified 200 in 364ms :: {"summary":{"netWorth":4620.27,"liqu…
+1|orbitale-finanza  | 12:14:46 AM [express] GET /api/transactions 304 in 261ms :: [{"id":791,"userId":18,"type":"income","c…
+1|orbitale-finanza  | [TRANSACTIONS] Richiesta: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   startDate: '2026-04-01',
+1|orbitale-finanza  |   endDate: '2026-04-15',
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   rawQuery: { startDate: '2026-04-01', endDate: '2026-04-15' }
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   startDate: '2026-04-01',
+1|orbitale-finanza  |   endDate: '2026-04-15',
+1|orbitale-finanza  |   conditionsCount: 3
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | [TRANSACTIONS] Risultati: 59 trovate | date range: { primo: '2026-04-01', ultimo: '2026-04-14' }
+1|orbitale-finanza  | 12:14:49 AM [express] GET /api/transactions 200 in 108ms :: [{"id":791,"userId":18,"type":"income","c…
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   startDate: undefined,
+1|orbitale-finanza  |   endDate: undefined,
+1|orbitale-finanza  |   conditionsCount: 1
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 15,
+1|orbitale-finanza  |   startDate: undefined,
+1|orbitale-finanza  |   endDate: undefined,
+1|orbitale-finanza  |   conditionsCount: 1
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | 12:14:50 AM [express] GET /api/dashboard 200 in 203ms :: {"financialSummary":{"netWorth":0,"available…
+1|orbitale-finanza  | [TRANSACTIONS] Richiesta: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   startDate: '2026-04-08',
+1|orbitale-finanza  |   endDate: '2026-04-15',
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   rawQuery: { startDate: '2026-04-08', endDate: '2026-04-15' }
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   startDate: '2026-04-08',
+1|orbitale-finanza  |   endDate: '2026-04-15',
+1|orbitale-finanza  |   conditionsCount: 3
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] Esempio prima riga date type: string | valore: 2026-04-14
+1|orbitale-finanza  | [TRANSACTIONS] Risultati: 32 trovate | date range: { primo: '2026-04-08', ultimo: '2026-04-14' }
+1|orbitale-finanza  | 12:14:52 AM [express] GET /api/transactions 200 in 108ms :: [{"id":791,"userId":18,"type":"income","c…
+1|orbitale-finanza  | [TRANSACTIONS] Richiesta: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   startDate: '2026-04-15',
+1|orbitale-finanza  |   endDate: '2026-04-15',
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   rawQuery: { startDate: '2026-04-15', endDate: '2026-04-15' }
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [DB QUERY] getUserTransactions: {
+1|orbitale-finanza  |   userId: 18,
+1|orbitale-finanza  |   limit: 10000,
+1|orbitale-finanza  |   startDate: '2026-04-15',
+1|orbitale-finanza  |   endDate: '2026-04-15',
+1|orbitale-finanza  |   conditionsCount: 3
+1|orbitale-finanza  | }
+1|orbitale-finanza  | [TRANSACTIONS] Risultati: 0 trovate | date range: nessuna
+1|orbitale-finanza  | 12:14:53 AM [express] GET /api/transactions 200 in 111ms :: []
