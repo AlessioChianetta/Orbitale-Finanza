@@ -1305,7 +1305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10000;
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
+      console.log('[TRANSACTIONS] Richiesta:', { userId, startDate, endDate, limit, rawQuery: req.query });
       const transactions = await storage.getUserTransactions(userId, limit, startDate, endDate);
+      console.log('[TRANSACTIONS] Risultati:', transactions.length, 'trovate | date range:', transactions.length > 0 ? { primo: transactions[transactions.length - 1]?.date, ultimo: transactions[0]?.date } : 'nessuna');
       res.json(transactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);

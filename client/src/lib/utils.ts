@@ -19,7 +19,8 @@ export function safeInt(value: string | number | null | undefined, fallback: num
 
 export function toLocaleDateSafe(dateStr: string): string {
   if (!dateStr) return '';
-  const parts = dateStr.split('-');
+  const clean = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+  const parts = clean.split('-');
   if (parts.length === 3) {
     const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
     return d.toLocaleDateString('it-IT');

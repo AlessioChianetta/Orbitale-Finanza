@@ -3,6 +3,10 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import * as schema from "@shared/schema";
 
+pg.types.setTypeParser(1082, (val: string) => val);
+pg.types.setTypeParser(1114, (val: string) => val);
+pg.types.setTypeParser(1184, (val: string) => val);
+
 const { Pool: PgPool } = pg;
 
 if (!process.env.DATABASE_URL) {

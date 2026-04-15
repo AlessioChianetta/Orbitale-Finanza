@@ -499,12 +499,20 @@ export class DatabaseStorage implements IStorage {
       conditions.push(lte(transactions.date, endDate));
     }
 
-    return await db
+    console.log('[DB QUERY] getUserTransactions:', { userId, limit, startDate, endDate, conditionsCount: conditions.length });
+
+    const results = await db
       .select()
       .from(transactions)
       .where(and(...conditions))
       .orderBy(desc(transactions.date))
       .limit(limit);
+
+    if (results.length > 0) {
+      console.log('[DB QUERY] Esempio prima riga date type:', typeof results[0].date, '| valore:', results[0].date);
+    }
+
+    return results;
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
