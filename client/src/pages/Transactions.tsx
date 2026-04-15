@@ -315,7 +315,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
 
   React.useEffect(() => {
     if (lastSavedInfo) {
-      const timer = setTimeout(() => setLastSavedInfo(null), 3500);
+      const timer = setTimeout(() => setLastSavedInfo(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [lastSavedInfo]);
@@ -369,7 +369,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
 
       return response.json();
     },
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       invalidateAccountCache();
       queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/recurring-transactions'] });
@@ -379,9 +379,9 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       if (batchModeRef.current) {
         setBatchCount(prev => prev + 1);
         setLastSavedInfo({
-          amount: formData.amount,
-          category: formData.category || formData.subcategory || formData.type,
-          type: formData.type
+          amount: variables.amount,
+          category: variables.category || variables.subcategory || variables.type,
+          type: variables.type
         });
         resetFormPartial();
         toast({
