@@ -1380,7 +1380,11 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                   <div className="flex flex-1 space-x-2">
                     <Button
                       onClick={() => handleSubmit(false)}
-                      disabled={addTransactionMutation.isPending}
+                      disabled={
+                        addTransactionMutation.isPending ||
+                        (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity) ||
+                        ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance)
+                      }
                       className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                     >
                       {addTransactionMutation.isPending ? (
@@ -1392,7 +1396,11 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                     </Button>
                     <Button
                       onClick={() => handleSubmit(true)}
-                      disabled={addTransactionMutation.isPending}
+                      disabled={
+                        addTransactionMutation.isPending ||
+                        (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity) ||
+                        ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance)
+                      }
                       variant="outline"
                       className="py-3 border-2 border-blue-300 text-blue-700 hover:bg-blue-50"
                     >
