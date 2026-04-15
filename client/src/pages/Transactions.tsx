@@ -495,13 +495,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       ...prev,
       amount: '',
       description: '',
-      date: getLocalDateString(),
-      goalId: '',
-      investmentId: '',
-      isRecurring: false,
-      frequency: 'monthly',
-      dayOfMonth: new Date().getDate(),
-      endDate: ''
+      date: getLocalDateString()
     }));
     if (isMobile) {
       setCurrentStep(2);
