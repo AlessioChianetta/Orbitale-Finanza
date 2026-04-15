@@ -2587,12 +2587,9 @@ export default function Transactions() {
       const url = (apiStartDate && apiEndDate)
         ? `/api/transactions?startDate=${apiStartDate}&endDate=${apiEndDate}`
         : '/api/transactions?limit=10000';
-      console.log('[FRONTEND] Filtro transazioni:', { selectedPeriod, apiStartDate, apiEndDate, url });
       const res = await fetch(url, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch transactions');
-      const data = await res.json();
-      console.log('[FRONTEND] Ricevute:', data.length, 'transazioni | prima data:', data[0]?.date, '| ultima data:', data[data.length - 1]?.date);
-      return data;
+      return res.json();
     }
   });
 
