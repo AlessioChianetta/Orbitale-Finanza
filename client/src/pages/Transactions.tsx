@@ -508,8 +508,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
     }
   };
 
-  // Step navigation helpers
-  const totalSteps = (isMobile || useThreeStepMode) ? 3 : 1;
+  const totalSteps = useThreeStepMode ? 3 : 1;
 
   const canProceedToStep2 = () => {
     return formData.type && (formData.type === 'goal_contribution' || formData.category);
@@ -1072,7 +1071,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                   <div className="flex-1 h-px bg-gray-200" />
                 </div>
               )}
-          {formData.type && formData.type !== 'goal_contribution' && (
+          {isMobile && formData.type && formData.type !== 'goal_contribution' && (
             <div>
               <Label>Categoria *</Label>
               <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value, subcategory: ''})}>
@@ -1118,8 +1117,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
             </div>
           )}
 
-          {/* Subcategory - Only show for expenses when category is selected */}
-          {formData.type === 'expense' && formData.category && getSubcategoriesForCategory().length > 0 && (
+          {isMobile && formData.type === 'expense' && formData.category && getSubcategoriesForCategory().length > 0 && (
             <div>
               <Label>Sottocategoria *</Label>
               <Select value={formData.subcategory} onValueChange={(value) => setFormData({...formData, subcategory: value})}>
@@ -1128,9 +1126,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                 </SelectTrigger>
                 <SelectContent className="max-h-[50vh] overflow-y-auto">
                   {getSubcategoriesForCategory().map((subcategory) => {
-                    // Map subcategories to specific icons with colors
                     const subcategoryIcons: Record<string, { icon: any, color: string }> = {
-                      // Casa e Abitazione
                       'Affitto/Mutuo': { icon: Home, color: 'text-blue-600' },
                       'Bollette (Luce, Gas, Acqua)': { icon: Zap, color: 'text-yellow-600' },
                       'Telefono fisso/Internet': { icon: Wifi, color: 'text-green-600' },
