@@ -275,7 +275,9 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
-  const useThreeStepMode = true; // Always use three-step mode
+  const [batchCount, setBatchCount] = useState(0);
+  const [lastSavedInfo, setLastSavedInfo] = useState<{ amount: string; category: string; type: string } | null>(null);
+  const batchModeRef = React.useRef(false);
   const [formData, setFormData] = useState({
     type: '',
     category: '',
@@ -302,12 +304,23 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Reset step when dialog opens/closes
   React.useEffect(() => {
     if (!isOpen) {
       setCurrentStep(1);
+      setBatchCount(0);
+      setLastSavedInfo(null);
+      batchModeRef.current = false;
     }
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (lastSavedInfo) {
+      const timer = setTimeout(() => setLastSavedInfo(null), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [lastSavedInfo]);
+
+  const useThreeStepMode = isMobile;
 
   const { data: goals } = useQuery({
     queryKey: ['/api/goals'],
@@ -336,8 +349,6 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
 
   const addTransactionMutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log('[DEBUG] Starting transaction mutation', data);
-      // For subscriptions, create recurring transaction
       const endpoint = data.type === 'subscription' ? '/api/recurring-transactions' : '/api/transactions';
 
       const payload = {
@@ -345,10 +356,9 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
         amount: safeFloat(data.amount),
         goalId: data.goalId ? safeInt(data.goalId) : undefined,
         investmentId: data.investmentId ? safeInt(data.investmentId) : undefined,
-        account_type: data.accountType // Map frontend field to backend field
+        account_type: data.accountType
       };
 
-      console.log('[DEBUG] Transaction payload:', payload);
       const response = await apiRequest('POST', endpoint, payload);
 
       // Check if response is ok before parsing JSON
@@ -360,24 +370,35 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       return response.json();
     },
     onSuccess: (result) => {
-      console.log('[DEBUG] Transaction success:', result);
       invalidateAccountCache();
       queryClient.invalidateQueries({ queryKey: ['/api/goals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/recurring-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
 
-      toast({
-        title: "Transazione aggiunta!",
-        description: "La transazione è stata registrata con successo."
-      });
-
-      console.log('[DEBUG] Closing dialog and resetting form');
-      setIsOpen(false);
-      resetForm();
+      if (batchModeRef.current) {
+        setBatchCount(prev => prev + 1);
+        setLastSavedInfo({
+          amount: formData.amount,
+          category: formData.category || formData.subcategory || formData.type,
+          type: formData.type
+        });
+        resetFormPartial();
+        toast({
+          title: "Transazione salvata!",
+          description: "Puoi aggiungerne un'altra."
+        });
+      } else {
+        toast({
+          title: "Transazione aggiunta!",
+          description: "La transazione è stata registrata con successo."
+        });
+        setIsOpen(false);
+        resetForm();
+      }
+      batchModeRef.current = false;
     },
     onError: (error: Error) => {
-      console.error('[DEBUG] Transaction error:', error);
       toast({
         title: "Errore",
         description: error.message,
@@ -469,6 +490,24 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
     setCurrentStep(1);
   };
 
+  const resetFormPartial = () => {
+    setFormData(prev => ({
+      ...prev,
+      amount: '',
+      description: '',
+      date: getLocalDateString(),
+      goalId: '',
+      investmentId: '',
+      isRecurring: false,
+      frequency: 'monthly',
+      dayOfMonth: new Date().getDate(),
+      endDate: ''
+    }));
+    if (isMobile) {
+      setCurrentStep(2);
+    }
+  };
+
   // Step navigation helpers
   const totalSteps = (isMobile || useThreeStepMode) ? 3 : 1;
 
@@ -521,18 +560,15 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
     // Handle standard accounts
     const archAccounts = (accountArchitecture as any)?.accounts;
     if (!archAccounts) {
-      console.log('[DEBUG] No accounts in architecture:', accountArchitecture);
       return 0;
     }
     const account = archAccounts[formData.accountType];
-    console.log('[DEBUG] Selected account balance:', { accountType: formData.accountType, account, balance: account?.balance });
     return account?.balance || 0;
   };
 
   const selectedAccountBalance = getSelectedAccountBalance();
 
-  const handleSubmit = () => {
-    // Category is not required for goal contributions
+  const handleSubmit = (batch = false) => {
     const isCategoryRequired = formData.type !== 'goal_contribution';
     const isSubcategoryRequired = formData.type === 'expense' && formData.category;
 
@@ -545,7 +581,6 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       return;
     }
 
-    // Always validate account type
     if (!formData.accountType) {
       toast({
         title: "Conto mancante",
@@ -559,7 +594,6 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
 
     const amount = safeFloat(formData.amount);
 
-    // Validazione liquidità per investimenti (solo investimenti usano liquidità)
     if (formData.type === 'investment' && amount > availableLiquidity) {
       toast({
         title: "Liquidità insufficiente",
@@ -569,7 +603,6 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       return;
     }
 
-    // Validazione saldo per spese, abbonamenti e contributi obiettivo
     if ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && amount > selectedAccountBalance) {
       const selectedAccount = accountTypes.find(acc => acc.value === formData.accountType);
       toast({
@@ -580,6 +613,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       return;
     }
 
+    batchModeRef.current = batch;
     addTransactionMutation.mutate(formData);
   };
 
@@ -621,17 +655,25 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
               </div>
               <div className="flex-1">
                 <DialogTitle className="text-xl font-bold text-gray-900">
-                  {(isMobile || useThreeStepMode) ? getStepTitle() : 'Aggiungi Transazione'}
+                  {useThreeStepMode ? getStepTitle() : 'Aggiungi Transazione'}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-gray-600 mt-1">
-                  {(isMobile || useThreeStepMode) ? `Step ${currentStep} di ${totalSteps}` : 'Compila i dettagli per registrare una nuova operazione'}
+                  {useThreeStepMode
+                    ? `Step ${currentStep} di ${totalSteps}`
+                    : batchCount > 0
+                      ? `${batchCount} transazion${batchCount === 1 ? 'e' : 'i'} inserit${batchCount === 1 ? 'a' : 'e'} in questa sessione`
+                      : 'Compila i dettagli per registrare una nuova operazione'}
                 </DialogDescription>
               </div>
             </div>
+            {batchCount > 0 && (
+              <div className="flex items-center space-x-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-semibold">
+                <span>{batchCount}</span>
+              </div>
+            )}
           </div>
 
-          {/* Progress indicator for step mode */}
-          {(isMobile || useThreeStepMode) && (
+          {useThreeStepMode && (
             <div className="flex space-x-2 mt-4">
               {Array.from({ length: totalSteps }).map((_, index) => (
                 <div
@@ -651,8 +693,19 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'thin'
         }}>
-          {/* Step 1: Type and Category */}
-          {((!isMobile && !useThreeStepMode) || currentStep === 1) && (
+          {lastSavedInfo && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-green-800">Transazione salvata!</p>
+                <p className="text-xs text-green-600 truncate">{formatEuro(safeFloat(lastSavedInfo.amount))} - {lastSavedInfo.category}</p>
+              </div>
+            </div>
+          )}
+
+          {(!useThreeStepMode || currentStep === 1) && (
             <div className={`space-y-4 ${isMobile ? '' : 'mb-6'}`}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Transaction Type */}
@@ -842,11 +895,17 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
             </div>
           )}
 
-          {/* Step 2: Account and Amount */}
-          {((!isMobile && !useThreeStepMode) || currentStep === 2) && (
+          {(!useThreeStepMode || currentStep === 2) && (
             <div className={`space-y-4 ${isMobile ? '' : 'mb-6'}`}>
-
-          {/* Account Type */}
+              {!isMobile && (
+                <div className="flex items-center space-x-3 pt-2 pb-1">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Wallet className="w-3.5 h-3.5 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700">Conto e Importo</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold flex items-center space-x-2">
                   <span>Conto di Riferimento</span>
@@ -1002,11 +1061,17 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
             </div>
           )}
 
-          {/* Step 3: Details and Goal/Investment Selection */}
-          {((!isMobile && !useThreeStepMode) || currentStep === 3) && (
+          {(!useThreeStepMode || currentStep === 3) && (
             <div className="space-y-4">
-
-          {/* Category - Not required for goal contributions */}
+              {!isMobile && (
+                <div className="flex items-center space-x-3 pt-2 pb-1">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-3.5 h-3.5 text-purple-600" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700">Dettagli e Conferma</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+              )}
           {formData.type && formData.type !== 'goal_contribution' && (
             <div>
               <Label>Categoria *</Label>
@@ -1289,91 +1354,90 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
           )}
         </div>
 
-        {/* Enhanced Footer with Step Navigation */}
         <div className="flex-shrink-0 bg-gradient-to-r from-gray-50 to-blue-50 border-t px-4 sm:px-6 py-4">
-          {(isMobile || useThreeStepMode) && totalSteps > 1 ? (
-            <div className="flex justify-between space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className="flex-1 py-3 border-2"
-              >
-                ← Indietro
-              </Button>
-
-              {currentStep < totalSteps ? (
+          {useThreeStepMode && totalSteps > 1 ? (
+            <div className="space-y-3">
+              <div className="flex justify-between space-x-3">
                 <Button
                   type="button"
-                  onClick={nextStep}
-                  disabled={
-                    (currentStep === 1 && !canProceedToStep2()) ||
-                    (currentStep === 2 && !canProceedToStep3())
-                  }
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className="flex-1 py-3 border-2"
                 >
-                  Continua →
+                  Indietro
                 </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={
-                    addTransactionMutation.isPending ||
-                    (formData.type === 'investment' && availableLiquidity <= 0) ||
-                    ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && formData.accountType && selectedAccountBalance <= 0) ||
-                    ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance) ||
-                    (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity)
-                  }
-                  className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                >
-                  {addTransactionMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Salvando...</span>
-                    </div>
-                  ) : (
-                    "✅ Conferma"
-                  )}
-                </Button>
-              )}
+
+                {currentStep < totalSteps ? (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={
+                      (currentStep === 1 && !canProceedToStep2()) ||
+                      (currentStep === 2 && !canProceedToStep3())
+                    }
+                    className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                  >
+                    Continua
+                  </Button>
+                ) : (
+                  <div className="flex flex-1 space-x-2">
+                    <Button
+                      onClick={() => handleSubmit(false)}
+                      disabled={addTransactionMutation.isPending}
+                      className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    >
+                      {addTransactionMutation.isPending ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Salvando...</span>
+                        </div>
+                      ) : "Salva e Chiudi"}
+                    </Button>
+                    <Button
+                      onClick={() => handleSubmit(true)}
+                      disabled={addTransactionMutation.isPending}
+                      variant="outline"
+                      className="py-3 border-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      + Altra
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500">Step {currentStep} di {totalSteps}</p>
+              </div>
             </div>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                addTransactionMutation.isPending ||
-                (formData.type === 'investment' && availableLiquidity <= 0) ||
-                ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && formData.accountType && selectedAccountBalance <= 0) ||
-                ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance) ||
-                (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity)
-              }
-              className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 font-semibold text-lg"
-            >
-              {addTransactionMutation.isPending ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Aggiungendo transazione...</span>
-                </div>
-              ) :
-               (formData.type === 'investment' && availableLiquidity <= 0) ?
-               "❌ Liquidità insufficiente" :
-               (formData.type === 'investment' && safeFloat(formData.amount) > availableLiquidity) ?
-               "❌ Importo superiore alla liquidità" :
-               ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && formData.accountType && selectedAccountBalance <= 0) ?
-               "❌ Saldo insufficiente" :
-               ((formData.type === 'expense' || formData.type === 'subscription' || formData.type === 'goal_contribution') && safeFloat(formData.amount) > selectedAccountBalance) ?
-               "❌ Importo superiore al saldo" :
-               "✅ Aggiungi Transazione"}
-            </Button>
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => handleSubmit(true)}
+                disabled={addTransactionMutation.isPending}
+                variant="outline"
+                className="py-3 px-4 border-2 border-blue-300 text-blue-700 hover:bg-blue-50 font-medium"
+              >
+                {addTransactionMutation.isPending ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <span>Salvando...</span>
+                  </div>
+                ) : "Salva e Aggiungi Altra"}
+              </Button>
+              <Button
+                onClick={() => handleSubmit(false)}
+                disabled={addTransactionMutation.isPending}
+                className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 font-semibold text-lg"
+              >
+                {addTransactionMutation.isPending ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Salvando...</span>
+                  </div>
+                ) : "Salva e Chiudi"}
+              </Button>
+            </div>
           )}
-
-          {/* Helper text */}
-          <div className="text-center mt-3">
-            <p className="text-xs text-gray-500">
-              {(isMobile || useThreeStepMode) ? `Step ${currentStep} di ${totalSteps}` : '💡 Tutti i campi contrassegnati con * sono obbligatori'}
-            </p>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
