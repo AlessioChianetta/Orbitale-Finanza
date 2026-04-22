@@ -639,7 +639,7 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className={`${isMobile ? 'w-[95vw] max-w-[95vw] max-h-[90vh]' : 'sm:max-w-3xl'} flex flex-col p-0`}>
+      <DialogContent className="w-[calc(100%-1rem)] sm:max-w-3xl max-h-[calc(100dvh-2rem)] sm:max-h-[90dvh] flex flex-col p-0 overflow-hidden gap-0">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -1065,175 +1065,6 @@ function AddTransactionDialog({ trigger }: { trigger: React.ReactNode }) {
                   <div className="flex-1 h-px bg-gray-200" />
                 </div>
               )}
-          {isMobile && formData.type && formData.type !== 'goal_contribution' && (
-            <div>
-              <Label>Categoria *</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value, subcategory: ''})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona categoria" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[50vh] overflow-y-auto">
-                  {getCategoriesForType().map((category) => {
-                    // Map categories to icons and colors for dropdown display
-                    const categoryConfig: Record<string, { icon: any, color: string }> = {
-                      'Casa e Abitazione': { icon: Home, color: 'text-blue-600' },
-                      'Trasporti': { icon: Car, color: 'text-purple-600' },
-                      'Alimentazione': { icon: ShoppingCart, color: 'text-orange-600' },
-                      'Salute e Benessere': { icon: Heart, color: 'text-red-600' },
-                      'Abbigliamento e Cura': { icon: Shirt, color: 'text-indigo-600' },
-                      'Tecnologia e Comunicazione': { icon: Settings, color: 'text-gray-600' },
-                      'Intrattenimento e Cultura': { icon: Gamepad2, color: 'text-pink-600' },
-                      'Famiglia e Figli': { icon: Baby, color: 'text-yellow-600' },
-                      'Lavoro e Formazione': { icon: GraduationCap, color: 'text-teal-600' },
-                      'Altro': { icon: DollarSign, color: 'text-gray-600' },
-                      // Income categories
-                      'Stipendio': { icon: TrendingUp, color: 'text-green-600' },
-                      'Freelance': { icon: TrendingUp, color: 'text-blue-600' },
-                      'Bonus': { icon: TrendingUp, color: 'text-yellow-600' },
-                      'Investimenti': { icon: TrendingUp, color: 'text-purple-600' },
-                      'Vendite': { icon: TrendingUp, color: 'text-orange-600' },
-                      'Affitti': { icon: TrendingUp, color: 'text-teal-600' }
-                    };
-                    const config = categoryConfig[category] || { icon: DollarSign, color: 'text-gray-600' };
-                    const Icon = config.icon;
-
-                    return (
-                      <SelectItem key={category} value={category}>
-                        <div className="flex items-center space-x-2">
-                          <Icon className={`w-4 h-4 ${config.color}`} />
-                          <span>{category}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {isMobile && formData.type === 'expense' && formData.category && getSubcategoriesForCategory().length > 0 && (
-            <div>
-              <Label>Sottocategoria *</Label>
-              <Select value={formData.subcategory} onValueChange={(value) => setFormData({...formData, subcategory: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona sottocategoria" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[50vh] overflow-y-auto">
-                  {getSubcategoriesForCategory().map((subcategory) => {
-                    const subcategoryIcons: Record<string, { icon: any, color: string }> = {
-                      'Affitto/Mutuo': { icon: Home, color: 'text-blue-600' },
-                      'Bollette (Luce, Gas, Acqua)': { icon: Zap, color: 'text-yellow-600' },
-                      'Telefono fisso/Internet': { icon: Wifi, color: 'text-green-600' },
-                      'Condominio': { icon: Building, color: 'text-gray-600' },
-                      'Riscaldamento/Climatizzazione': { icon: Thermometer, color: 'text-red-600' },
-                      'Tassa rifiuti (TARI)': { icon: Receipt, color: 'text-orange-600' },
-                      'Manutenzioni/Riparazioni casa': { icon: Wrench, color: 'text-blue-700' },
-
-                      // Trasporti
-                      'Benzina/Diesel/Elettrico': { icon: Fuel, color: 'text-red-600' },
-                      'Abbonamenti mezzi pubblici': { icon: Bus, color: 'text-blue-600' },
-                      'Assicurazione auto': { icon: Shield, color: 'text-blue-600' },
-                      'Bollo auto': { icon: Receipt, color: 'text-orange-600' },
-                      'Parcheggi/ZTL': { icon: ParkingCircle, color: 'text-purple-600' },
-                      'Pedaggi autostradali': { icon: Car, color: 'text-blue-600' },
-                      'Manutenzione/Revisione auto': { icon: Wrench, color: 'text-gray-600' },
-                      'Car sharing/Taxi': { icon: TaxiIcon, color: 'text-indigo-600' },
-
-                      // Alimentazione
-                      'Spesa alimentare (supermercato)': { icon: ShoppingCart, color: 'text-green-600' },
-                      'Ristoranti/Pizzerie': { icon: Coffee, color: 'text-red-600' },
-                      'Bar/Caffè': { icon: Coffee, color: 'text-orange-600' },
-                      'Mensa ufficio/scuola': { icon: Coffee, color: 'text-blue-600' },
-                      'Delivery/Take away': { icon: ShoppingBag, color: 'text-purple-600' },
-
-                      // Salute e Benessere
-                      'Assicurazione sanitaria': { icon: Shield, color: 'text-blue-600' },
-                      'Farmaci/Parafarmaci': { icon: Pill, color: 'text-green-600' },
-                      'Visite mediche private': { icon: Stethoscope, color: 'text-red-600' },
-                      'Dentista/Ortodonzia': { icon: Heart, color: 'text-blue-600' },
-                      'Palestra/Sport': { icon: Dumbbell, color: 'text-orange-600' },
-                      'Parrucchiere/Estetica': { icon: Scissors, color: 'text-pink-600' },
-                      'Ottico/Lenti': { icon: Eye, color: 'text-purple-600' },
-
-                      // Abbigliamento e Cura
-                      'Abbigliamento': { icon: Shirt, color: 'text-indigo-600' },
-                      'Scarpe/Accessori': { icon: Footprints, color: 'text-brown-600' },
-                      'Prodotti bellezza/Cosmetici': { icon: Sparkles, color: 'text-pink-600' },
-                      'Vestiti': { icon: Shirt, color: 'text-blue-600' },
-                      'Scarpe': { icon: Footprints, color: 'text-brown-600' },
-                      'Intimo': { icon: Shirt, color: 'text-pink-600' },
-                      'Accessori (borse, cinture, etc.)': { icon: Gift, color: 'text-purple-600' },
-                      'Lavanderia/Tintoria': { icon: Shirt, color: 'text-gray-600' },
-
-                      // Tecnologia e Comunicazione
-                      'Telefono/Internet mobile': { icon: Smartphone, color: 'text-blue-600' },
-                      'Elettronica/Informatica': { icon: Monitor, color: 'text-gray-600' },
-                      'Software/App/Abbonamenti': { icon: Settings, color: 'text-purple-600' },
-                      'Accessori tech': { icon: Headphones, color: 'text-green-600' },
-                      'Telefono cellulare': { icon: Smartphone, color: 'text-blue-600' },
-                      'Netflix/Prime/Disney+': { icon: Monitor, color: 'text-red-600' },
-                      'Spotify/Apple Music': { icon: Headphones, color: 'text-green-600' },
-                      'Software/App premium': { icon: Settings, color: 'text-purple-600' },
-                      'Cloud storage': { icon: Cloud, color: 'text-blue-600' },
-                      'Gaming (PlayStation Plus, etc.)': { icon: Gamepad2, color: 'text-orange-600' },
-
-                      // Intrattenimento e Cultura
-                      'Cinema/Teatro/Concerti': { icon: Calendar, color: 'text-red-600' },
-                      'Streaming/Gaming': { icon: Gamepad2, color: 'text-blue-600' },
-                      'Libri/Riviste': { icon: GraduationCap, color: 'text-green-600' },
-                      'Hobby/Corsi': { icon: Heart, color: 'text-purple-600' },
-                      'Viaggi/Vacanze': { icon: Plane, color: 'text-blue-600' },
-                      'Sport/Attività ricreative': { icon: Target, color: 'text-orange-600' },
-                      'Cinema/Teatro': { icon: Monitor, color: 'text-red-600' },
-                      'Concerti/Eventi': { icon: Heart, color: 'text-pink-600' },
-                      'Libri/Audiolibri': { icon: BookOpen, color: 'text-blue-600' },
-                      'Riviste/Giornali': { icon: FileText, color: 'text-gray-600' },
-                      'Hobby e passioni': { icon: Heart, color: 'text-purple-600' },
-
-                      // Famiglia e Figli
-                      'Bambini (vestiti, giochi)': { icon: Heart, color: 'text-pink-600' },
-                      'Scuola/Università': { icon: GraduationCap, color: 'text-blue-600' },
-                      'Babysitter/Asilo nido': { icon: Users, color: 'text-green-600' },
-                      'Attività sportive bambini': { icon: Target, color: 'text-orange-600' },
-                      'Spese mediche bambini': { icon: Stethoscope, color: 'text-red-600' },
-                      'Asilo nido/Scuola privata': { icon: GraduationCap, color: 'text-blue-600' },
-                      'Baby sitter': { icon: Users, color: 'text-pink-600' },
-                      'Pannolini/Prodotti neonato': { icon: Heart, color: 'text-yellow-600' },
-                      'Regali (compleanni, ricorrenze)': { icon: Gift, color: 'text-purple-600' },
-
-                      // Lavoro e Formazione
-                      'Formazione professionale': { icon: GraduationCap, color: 'text-blue-600' },
-                      'Materiale ufficio': { icon: Briefcase, color: 'text-gray-600' },
-                      'Trasporti per lavoro': { icon: Bus, color: 'text-gray-600' },
-                      'Abbigliamento professionale': { icon: Briefcase, color: 'text-purple-600' },
-                      'Corsi di formazione': { icon: GraduationCap, color: 'text-blue-600' },
-                      'Libri professionali': { icon: BookOpen, color: 'text-green-600' },
-
-                      // Altro
-                      'Donazioni/Beneficenza': { icon: Heart, color: 'text-red-600' },
-                      'Spese veterinario (animali)': { icon: Heart, color: 'text-green-600' },
-                      'Spese impreviste (buffer)': { icon: AlertTriangle, color: 'text-orange-600' },
-                      'Accantonamento vacanze': { icon: Plane, color: 'text-blue-600' },
-                      'Accantonamento regali Natale': { icon: Gift, color: 'text-red-600' },
-                      'Altro': { icon: DollarSign, color: 'text-gray-600' }
-                    };
-
-                    const iconConfig = subcategoryIcons[subcategory] || { icon: DollarSign, color: 'text-gray-600' };
-                    const Icon = iconConfig.icon;
-
-                    return (
-                      <SelectItem key={subcategory} value={subcategory}>
-                        <div className="flex items-center space-x-2">
-                          <Icon className={`w-4 h-4 ${iconConfig.color}`} />
-                          <span>{subcategory}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           {/* Goal Selection for Goal Contributions */}
               {formData.type === 'goal_contribution' && (
@@ -1629,7 +1460,7 @@ function EditTransactionDialog({ transaction, isOpen, onOpenChange }: { transact
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl flex flex-col p-0 max-h-[90vh]">
+      <DialogContent className="w-[calc(100%-1rem)] sm:max-w-2xl flex flex-col p-0 max-h-[calc(100dvh-2rem)] sm:max-h-[90dvh] overflow-hidden gap-0">
         <DialogHeader className="px-6 pt-6 pb-2 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -2243,7 +2074,7 @@ function AccountTransferDialog({ trigger }: { trigger: React.ReactNode }) {
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className={`${isMobile ? 'w-[95vw] max-w-[95vw] max-h-[90vh]' : 'max-w-2xl'} bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30 border-0 shadow-2xl flex flex-col p-0`} aria-describedby="transfer-dialog-description">
+      <DialogContent className="w-[calc(100%-1rem)] sm:max-w-2xl max-h-[calc(100dvh-2rem)] sm:max-h-[90dvh] bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30 border-0 shadow-2xl flex flex-col p-0 overflow-hidden gap-0" aria-describedby="transfer-dialog-description">
         {/* Decorative background elements - reduced on mobile */}
         <div className={`absolute top-0 right-0 bg-gradient-to-bl from-blue-400/15 via-indigo-400/10 to-transparent rounded-full ${isMobile ? 'w-16 h-16 -mr-8 -mt-8' : 'w-32 h-32 -mr-16 -mt-16'}`}></div>
         <div className={`absolute bottom-0 left-0 bg-gradient-to-tr from-cyan-400/10 via-blue-400/5 to-transparent rounded-full ${isMobile ? 'w-12 h-12 -ml-6 -mb-6' : 'w-24 h-24 -ml-12 -mb-12'}`}></div>
