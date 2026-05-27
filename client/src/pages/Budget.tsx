@@ -1584,9 +1584,9 @@ function CategoryBudgetManager({
   );
 }
 
-function BudgetSetup({ budgetSettings, onUpdate }: { 
-  budgetSettings: BudgetSettings | null, 
-  onUpdate: () => void 
+function BudgetSetup({ budgetSettings, onUpdate }: {
+  budgetSettings: BudgetSettings | null,
+  onUpdate: () => void
 }) {
   const [needsPercentage, setNeedsPercentage] = useState(budgetSettings?.needsPercentage || "50");
   const [wantsPercentage, setWantsPercentage] = useState(budgetSettings?.wantsPercentage || "30");
@@ -1599,35 +1599,66 @@ function BudgetSetup({ budgetSettings, onUpdate }: {
   const updateBudgetMutation = useMutation({
     mutationFn: async (data: { needsPercentage: string; wantsPercentage: string; savingsPercentage: string; monthlyIncome: string; userId: number; }) => {
       const response = await apiRequest('POST', '/api/budget/settings', data);
+      if (!response.ok) {
+        let msg = `Errore server (${response.status})`;
+        try {
+          const payload = await response.json();
+          if (payload?.message) msg = payload.message;
+          if (payload?.errors?.formErrors?.length) {
+            msg += ` — ${payload.errors.formErrors.join('; ')}`;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Budget aggiornato",
-        description: "Le impostazioni del budget sono state salvate con successo."
+        title: "Configurazione salvata",
+        description: "Le impostazioni del budget sono state aggiornate."
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/budget/settings'] });
       onUpdate();
     },
     onError: (error: Error) => {
       toast({
-        title: "Errore",
+        title: "Errore nel salvataggio",
         description: error.message,
         variant: "destructive"
       });
     }
   });
 
+  const needsNum = safeFloat(needsPercentage);
+  const wantsNum = safeFloat(wantsPercentage);
+  const savingsNum = safeFloat(savingsPercentage);
+  const total = needsNum + wantsNum + savingsNum;
+  const incomeNum = safeFloat(monthlyIncome);
+  const isTotalValid = Math.abs(total - 100) < 0.01;
+  const isIncomeValid = incomeNum >= 0;
+  const canSave = isTotalValid && isIncomeValid && !updateBudgetMutation.isPending;
+
+  const needsEuro = (incomeNum * needsNum) / 100;
+  const wantsEuro = (incomeNum * wantsNum) / 100;
+  const savingsEuro = (incomeNum * savingsNum) / 100;
+
   const handleSave = () => {
-    const total = safeFloat(needsPercentage) + safeFloat(wantsPercentage) + safeFloat(savingsPercentage);
-    if (Math.abs(total - 100) > 0.01) {
+    if (!isTotalValid) {
       toast({
-        title: "Errore",
-        description: "Le percentuali devono sommare a 100%",
+        title: "Percentuali non valide",
+        description: `La somma deve essere 100% (attuale: ${total.toFixed(1)}%)`,
         variant: "destructive"
       });
       return;
     }
-
+    if (!isIncomeValid) {
+      toast({
+        title: "Entrata non valida",
+        description: "L'entrata mensile deve essere un numero ≥ 0",
+        variant: "destructive"
+      });
+      return;
+    }
     updateBudgetMutation.mutate({
       needsPercentage,
       wantsPercentage,
@@ -1637,78 +1668,130 @@ function BudgetSetup({ budgetSettings, onUpdate }: {
     });
   };
 
-  const total = safeFloat(needsPercentage) + safeFloat(wantsPercentage) + safeFloat(savingsPercentage);
+  const applyPreset = (n: number, w: number, s: number) => {
+    setNeedsPercentage(String(n));
+    setWantsPercentage(String(w));
+    setSavingsPercentage(String(s));
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Configurazione Budget (Regola 50/30/20)</CardTitle>
+    <Card className="border-0 shadow-lg bg-white">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <CardTitle className="text-xl">Configurazione Budget</CardTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              Imposta entrata mensile e ripartizione bisogni / desideri / risparmi.
+            </p>
+          </div>
+          <Badge
+            variant={isTotalValid ? 'default' : 'destructive'}
+            className={isTotalValid
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+              : 'bg-rose-100 text-rose-700 hover:bg-rose-100'}
+          >
+            Totale: {total.toFixed(1)}% {isTotalValid ? '✓' : `(serve 100%)`}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <Label htmlFor="monthlyIncome">Entrata Mensile Netta (€)</Label>
+          <Label htmlFor="monthlyIncome" className="text-sm font-medium">Entrata Mensile Netta (€)</Label>
           <Input
             id="monthlyIncome"
             type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
             value={monthlyIncome}
             onChange={(e) => setMonthlyIncome(e.target.value)}
             placeholder="es. 2500"
+            className="mt-1"
           />
+          {!isIncomeValid && (
+            <p className="text-xs text-rose-600 mt-1">L'entrata deve essere un numero ≥ 0</p>
+          )}
         </div>
 
         <Separator />
 
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-gray-500 mr-1">Preset rapidi:</span>
+          <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(50, 30, 20)}>50 / 30 / 20</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(60, 20, 20)}>60 / 20 / 20</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(40, 30, 30)}>40 / 30 / 30</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(70, 20, 10)}>70 / 20 / 10</Button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="needs">Bisogni (%)</Label>
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+            <Label htmlFor="needs" className="text-sm font-medium text-emerald-900">Bisogni (%)</Label>
             <Input
               id="needs"
               type="number"
+              inputMode="decimal"
               value={needsPercentage}
               onChange={(e) => setNeedsPercentage(e.target.value)}
               min="0"
               max="100"
+              step="0.1"
+              className="mt-1 bg-white"
             />
-            <p className="text-sm text-gray-500 mt-1">Affitto, bollette, cibo, trasporti</p>
+            <p className="text-xs text-gray-600 mt-2">Affitto, bollette, cibo, trasporti</p>
+            <p className="text-sm font-semibold text-emerald-700 mt-2">
+              ≈ {formatEuro(needsEuro)}
+            </p>
           </div>
 
-          <div>
-            <Label htmlFor="wants">Desideri (%)</Label>
+          <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-3">
+            <Label htmlFor="wants" className="text-sm font-medium text-sky-900">Desideri (%)</Label>
             <Input
               id="wants"
               type="number"
+              inputMode="decimal"
               value={wantsPercentage}
               onChange={(e) => setWantsPercentage(e.target.value)}
               min="0"
               max="100"
+              step="0.1"
+              className="mt-1 bg-white"
             />
-            <p className="text-sm text-gray-500 mt-1">Ristoranti, hobby, shopping</p>
+            <p className="text-xs text-gray-600 mt-2">Ristoranti, hobby, shopping</p>
+            <p className="text-sm font-semibold text-sky-700 mt-2">
+              ≈ {formatEuro(wantsEuro)}
+            </p>
           </div>
 
-          <div>
-            <Label htmlFor="savings">Risparmi (%)</Label>
+          <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-3">
+            <Label htmlFor="savings" className="text-sm font-medium text-violet-900">Risparmi (%)</Label>
             <Input
               id="savings"
               type="number"
+              inputMode="decimal"
               value={savingsPercentage}
               onChange={(e) => setSavingsPercentage(e.target.value)}
               min="0"
               max="100"
+              step="0.1"
+              className="mt-1 bg-white"
             />
-            <p className="text-sm text-gray-500 mt-1">Investimenti, obiettivi futuri</p>
+            <p className="text-xs text-gray-600 mt-2">Investimenti, obiettivi futuri</p>
+            <p className="text-sm font-semibold text-violet-700 mt-2">
+              ≈ {formatEuro(savingsEuro)}
+            </p>
           </div>
         </div>
 
-        <div className="text-center">
-          <p className={`text-sm ${Math.abs(total - 100) > 0.01 ? 'text-red-500' : 'text-green-600'}`}>
-            Totale: {total.toFixed(1)}%
-          </p>
-        </div>
+        {!isTotalValid && (
+          <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-800">
+            La somma delle percentuali è <strong>{total.toFixed(1)}%</strong>. Deve essere esattamente <strong>100%</strong> per poter salvare.
+          </div>
+        )}
 
-        <Button 
-          onClick={handleSave} 
-          disabled={updateBudgetMutation.isPending || Math.abs(total - 100) > 0.01}
-          className="w-full"
+        <Button
+          onClick={handleSave}
+          disabled={!canSave}
+          className="w-full rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
         >
           {updateBudgetMutation.isPending ? "Salvando..." : "Salva Configurazione"}
         </Button>

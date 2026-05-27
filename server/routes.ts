@@ -203,10 +203,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(null);
       }
 
+      // Resilient portfolio valuation: fall back to averagePrice if Finnhub fails
+      let priceSource: 'realtime' | 'fallback' | 'mixed' = 'realtime';
+      let realtimeOk = 0;
+      let fallbackOk = 0;
+
       const totalPortfolioValue = await investments.reduce(async (sumPromise, inv) => {
         const sum = await sumPromise;
         const quantity = parseFloat(inv.quantity || "0") || 0;
-        let currentPrice = parseFloat(inv.averagePrice || "0") || 0;
+        const fallbackPrice = parseFloat(inv.averagePrice || inv.currentPrice || "0") || 0;
+        let currentPrice = fallbackPrice;
+        let usedRealtime = false;
 
         try {
           const symbolToUse = inv.symbol || inv.name;
@@ -223,15 +230,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const realPrice = await finnhubService.getPrice(symbolToUse, instrumentType);
           if (realPrice && realPrice > 0) {
             currentPrice = realPrice;
+            usedRealtime = true;
           }
         } catch (error) {
-          console.error(`Failed to get real-time price for ${inv.symbol || inv.name}:`, error);
+          console.error(`[public/account-architecture] Finnhub price fallback for ${inv.symbol || inv.name}:`, (error as Error).message);
         }
+
+        if (usedRealtime) realtimeOk += 1;
+        else fallbackOk += 1;
 
         return sum + (quantity * currentPrice);
       }, Promise.resolve(0));
 
+      if (realtimeOk > 0 && fallbackOk > 0) priceSource = 'mixed';
+      else if (fallbackOk > 0 && realtimeOk === 0) priceSource = 'fallback';
+
       const subAccounts = await storage.getSubAccounts(architecture.id);
+
+      // Normalized accounts[] array for easier consumption
+      const accountsArray = [
+        {
+          key: 'income',
+          name: architecture.incomeAccountName,
+          bankName: architecture.incomeAccountBankName,
+          iban: architecture.incomeAccountIban,
+          balance: architecture.incomeAccountBalance,
+          monthlyAllocation: null,
+          extras: {},
+        },
+        {
+          key: 'wealth',
+          name: architecture.wealthAccountName,
+          bankName: architecture.wealthAccountBankName,
+          iban: architecture.wealthAccountIban,
+          balance: architecture.wealthAccountBalance,
+          monthlyAllocation: architecture.wealthMonthlyAllocation,
+          extras: {},
+        },
+        {
+          key: 'operating',
+          name: architecture.operatingAccountName,
+          bankName: architecture.operatingAccountBankName,
+          iban: architecture.operatingAccountIban,
+          balance: architecture.operatingAccountBalance,
+          monthlyAllocation: architecture.operatingMonthlyAllocation,
+          extras: {},
+        },
+        {
+          key: 'emergency',
+          name: architecture.emergencyAccountName,
+          bankName: architecture.emergencyAccountBankName,
+          iban: architecture.emergencyAccountIban,
+          balance: architecture.emergencyAccountBalance,
+          monthlyAllocation: architecture.emergencyMonthlyAllocation,
+          extras: {
+            targetAmount: architecture.emergencyTargetAmount,
+          },
+        },
+        {
+          key: 'investment',
+          name: architecture.investmentAccountName,
+          bankName: architecture.investmentAccountBankName,
+          iban: architecture.investmentAccountIban,
+          balance: totalPortfolioValue.toFixed(2),
+          monthlyAllocation: architecture.investmentMonthlyAllocation,
+          extras: {
+            priceSource,
+            realtimeCount: realtimeOk,
+            fallbackCount: fallbackOk,
+            instrumentsCount: investments.length,
+          },
+        },
+        {
+          key: 'savings',
+          name: architecture.savingsAccountName,
+          bankName: architecture.savingsAccountBankName,
+          iban: architecture.savingsAccountIban,
+          balance: architecture.savingsAccountBalance,
+          monthlyAllocation: architecture.savingsMonthlyAllocation,
+          extras: {
+            subAccounts: subAccounts || [],
+          },
+        },
+      ];
+
+      const totalBalance = accountsArray.reduce((s, a) => s + (parseFloat(String(a.balance ?? '0')) || 0), 0);
 
       const response = {
         id: architecture.id,
@@ -239,44 +322,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         monthlyIncome: architecture.monthlyIncome,
         autoDistributionEnabled: architecture.autoDistributionEnabled,
         distributionDay: architecture.distributionDay,
-        
+
+        // Normalized array (preferred for new consumers)
+        accounts: accountsArray,
+        subAccounts: subAccounts || [],
+
+        // Aggregated meta
+        meta: {
+          totalBalance: totalBalance.toFixed(2),
+          portfolioPriceSource: priceSource,
+          accountsCount: accountsArray.length,
+          subAccountsCount: subAccounts?.length || 0,
+        },
+
+        // Flat fields kept for backward compatibility
         incomeAccountName: architecture.incomeAccountName,
         incomeAccountBankName: architecture.incomeAccountBankName,
         incomeAccountIban: architecture.incomeAccountIban,
         incomeAccountBalance: architecture.incomeAccountBalance,
-        
+
         wealthAccountName: architecture.wealthAccountName,
         wealthAccountBankName: architecture.wealthAccountBankName,
         wealthAccountIban: architecture.wealthAccountIban,
         wealthAccountBalance: architecture.wealthAccountBalance,
         wealthMonthlyAllocation: architecture.wealthMonthlyAllocation,
-        
+
         operatingAccountName: architecture.operatingAccountName,
         operatingAccountBankName: architecture.operatingAccountBankName,
         operatingAccountIban: architecture.operatingAccountIban,
         operatingAccountBalance: architecture.operatingAccountBalance,
         operatingMonthlyAllocation: architecture.operatingMonthlyAllocation,
-        
+
         emergencyAccountName: architecture.emergencyAccountName,
         emergencyAccountBankName: architecture.emergencyAccountBankName,
         emergencyAccountIban: architecture.emergencyAccountIban,
         emergencyAccountBalance: architecture.emergencyAccountBalance,
         emergencyTargetAmount: architecture.emergencyTargetAmount,
         emergencyMonthlyAllocation: architecture.emergencyMonthlyAllocation,
-        
+
         investmentAccountName: architecture.investmentAccountName,
         investmentAccountBankName: architecture.investmentAccountBankName,
         investmentAccountIban: architecture.investmentAccountIban,
         investmentAccountBalance: totalPortfolioValue.toString(),
         investmentMonthlyAllocation: architecture.investmentMonthlyAllocation,
-        
+
         savingsAccountName: architecture.savingsAccountName,
         savingsAccountBankName: architecture.savingsAccountBankName,
         savingsAccountIban: architecture.savingsAccountIban,
         savingsAccountBalance: architecture.savingsAccountBalance,
         savingsMonthlyAllocation: architecture.savingsMonthlyAllocation,
-        
-        subAccounts: subAccounts || [],
       };
 
       res.json(response);
@@ -286,40 +380,220 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 3. PUBLIC: Transactions - Complete transaction history
+  // 3. PUBLIC: Transactions - Complete transaction history with rich filters & aggregates
+  // Query params (all optional):
+  //   startDate, endDate (YYYY-MM-DD)
+  //   type (income|expense|investment|goal_contribution|goal_refund|transfer)
+  //   category, subcategory, accountType, budgetCategory (needs|wants|savings)
+  //   merchant (substring, case-insensitive)
+  //   minAmount, maxAmount (numbers)
+  //   limit (integer, omit = no limit), offset (integer)
+  //   legacy=1 → returns bare array (back-compat)
   app.get('/api/public/transactions', requireMasterApiKey, async (req: any, res) => {
     try {
       const userId = parseInt(req.user.id);
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-      const transactions = await storage.getUserTransactions(userId, limit);
-      res.json(transactions);
+      const q = req.query as Record<string, string | undefined>;
+
+      const legacy = q.legacy === '1' || q.legacy === 'true';
+      const startDate = q.startDate;
+      const endDate = q.endDate;
+      const limit = q.limit ? Math.max(0, parseInt(q.limit, 10) || 0) : undefined;
+      const offset = q.offset ? Math.max(0, parseInt(q.offset, 10) || 0) : 0;
+      const minAmount = q.minAmount !== undefined ? parseFloat(q.minAmount) : undefined;
+      const maxAmount = q.maxAmount !== undefined ? parseFloat(q.maxAmount) : undefined;
+      const merchantQ = q.merchant?.trim().toLowerCase();
+
+      // Fetch ALL matching transactions (no silent cap) for the date range, then filter in-mem.
+      // Storage default of 10k is bypassed by passing a very large number.
+      const all = await storage.getUserTransactions(userId, Number.MAX_SAFE_INTEGER, startDate, endDate);
+
+      const filtered = all.filter((t) => {
+        if (q.type && t.type !== q.type) return false;
+        if (q.category && t.category !== q.category) return false;
+        if (q.subcategory && (t.subcategory || '') !== q.subcategory) return false;
+        if (q.accountType && (t.accountType || '') !== q.accountType) return false;
+        if (q.budgetCategory && (t.budgetCategory || '') !== q.budgetCategory) return false;
+        if (merchantQ) {
+          const hay = `${t.merchant || ''} ${t.description || ''}`.toLowerCase();
+          if (!hay.includes(merchantQ)) return false;
+        }
+        const amt = parseFloat(t.amount as any) || 0;
+        if (minAmount !== undefined && amt < minAmount) return false;
+        if (maxAmount !== undefined && amt > maxAmount) return false;
+        return true;
+      });
+
+      // Aggregates (computed BEFORE pagination, on the full filtered set)
+      const totals = { income: 0, expense: 0, investment: 0, goal_contribution: 0, goal_refund: 0, transfer: 0 };
+      const byCategory: Record<string, { count: number; total: number }> = {};
+      const byAccount: Record<string, { count: number; total: number }> = {};
+      const byType: Record<string, { count: number; total: number }> = {};
+      const byBudgetCategory: Record<string, { count: number; total: number }> = {};
+      let periodMin: string | null = null;
+      let periodMax: string | null = null;
+
+      for (const t of filtered) {
+        const amt = parseFloat(t.amount as any) || 0;
+        if (t.type in totals) (totals as any)[t.type] += amt;
+        const cat = t.category || 'Sconosciuta';
+        byCategory[cat] = byCategory[cat] || { count: 0, total: 0 };
+        byCategory[cat].count += 1;
+        byCategory[cat].total += amt;
+        const acc = t.accountType || 'unassigned';
+        byAccount[acc] = byAccount[acc] || { count: 0, total: 0 };
+        byAccount[acc].count += 1;
+        byAccount[acc].total += amt;
+        byType[t.type] = byType[t.type] || { count: 0, total: 0 };
+        byType[t.type].count += 1;
+        byType[t.type].total += amt;
+        const bc = t.budgetCategory || 'unassigned';
+        byBudgetCategory[bc] = byBudgetCategory[bc] || { count: 0, total: 0 };
+        byBudgetCategory[bc].count += 1;
+        byBudgetCategory[bc].total += amt;
+        const d = t.date as unknown as string;
+        if (d) {
+          if (!periodMin || d < periodMin) periodMin = d;
+          if (!periodMax || d > periodMax) periodMax = d;
+        }
+      }
+
+      const net = totals.income - totals.expense;
+
+      // Pagination
+      const paged = (limit === undefined && offset === 0)
+        ? filtered
+        : filtered.slice(offset, limit === undefined ? undefined : offset + limit);
+
+      if (legacy) {
+        return res.json(paged);
+      }
+
+      res.json({
+        data: paged,
+        meta: {
+          total: filtered.length,
+          returned: paged.length,
+          offset,
+          limit: limit ?? null,
+          period: { from: periodMin, to: periodMax },
+          totals: {
+            income: +totals.income.toFixed(2),
+            expense: +totals.expense.toFixed(2),
+            investment: +totals.investment.toFixed(2),
+            goalContribution: +totals.goal_contribution.toFixed(2),
+            goalRefund: +totals.goal_refund.toFixed(2),
+            transfer: +totals.transfer.toFixed(2),
+            net: +net.toFixed(2),
+          },
+          byType,
+          byCategory,
+          byAccount,
+          byBudgetCategory,
+          filters: {
+            startDate: startDate ?? null,
+            endDate: endDate ?? null,
+            type: q.type ?? null,
+            category: q.category ?? null,
+            subcategory: q.subcategory ?? null,
+            accountType: q.accountType ?? null,
+            budgetCategory: q.budgetCategory ?? null,
+            merchant: q.merchant ?? null,
+            minAmount: minAmount ?? null,
+            maxAmount: maxAmount ?? null,
+          },
+        },
+      });
     } catch (error) {
       console.error("Error fetching public transactions:", error);
       res.status(500).json({ message: "Failed to fetch transactions" });
     }
   });
 
-  // 4. PUBLIC: Budget Settings - 50/30/20 budget configuration
+  // 4. PUBLIC: Budget Settings - 50/30/20 budget configuration (with computed values)
   app.get('/api/public/budget-settings', requireMasterApiKey, async (req: any, res) => {
     try {
       const userId = parseInt(req.user.id);
       const settings = await storage.getUserBudgetSettings(userId);
-      res.json(settings || null);
+      if (!settings) {
+        return res.json(null);
+      }
+
+      const monthlyIncome = parseFloat((settings.monthlyIncome ?? '0') as any) || 0;
+      const needsPct = parseFloat((settings.needsPercentage ?? '50') as any) || 0;
+      const wantsPct = parseFloat((settings.wantsPercentage ?? '30') as any) || 0;
+      const savingsPct = parseFloat((settings.savingsPercentage ?? '20') as any) || 0;
+      const totalPct = needsPct + wantsPct + savingsPct;
+
+      res.json({
+        ...settings,
+        computed: {
+          monthlyIncome,
+          needsBudget: +((monthlyIncome * needsPct) / 100).toFixed(2),
+          wantsBudget: +((monthlyIncome * wantsPct) / 100).toFixed(2),
+          savingsBudget: +((monthlyIncome * savingsPct) / 100).toFixed(2),
+          totalPercentage: +totalPct.toFixed(2),
+          isValid: Math.abs(totalPct - 100) < 0.01 && monthlyIncome >= 0,
+        },
+      });
     } catch (error) {
       console.error("Error fetching public budget settings:", error);
       res.status(500).json({ message: "Failed to fetch budget settings" });
     }
   });
 
-  // 5. PUBLIC: Category Budgets - Detailed budget per category
+  // 5. PUBLIC: Category Budgets - With current-month spent / utilization
+  // Query: month=YYYY-MM (default: current month)
   app.get('/api/public/category-budgets', requireMasterApiKey, async (req: any, res) => {
     try {
       const userId = parseInt(req.user.id);
-      const budgets = await db.select()
-        .from(categoryBudgets)
-        .where(and(eq(categoryBudgets.userId, userId), eq(categoryBudgets.isActive, true)))
-        .orderBy(categoryBudgets.category, categoryBudgets.subcategory);
-      res.json(budgets);
+      const monthParam = (req.query.month as string | undefined)?.trim();
+      const now = new Date();
+      const yyyy = monthParam?.match(/^(\d{4})-(\d{2})$/);
+      const year = yyyy ? parseInt(yyyy[1], 10) : now.getFullYear();
+      const month = yyyy ? parseInt(yyyy[2], 10) : now.getMonth() + 1;
+      const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+      const [budgets, monthTxs] = await Promise.all([
+        db.select()
+          .from(categoryBudgets)
+          .where(and(eq(categoryBudgets.userId, userId), eq(categoryBudgets.isActive, true)))
+          .orderBy(categoryBudgets.category, categoryBudgets.subcategory),
+        storage.getUserTransactions(userId, Number.MAX_SAFE_INTEGER, monthStart, monthEnd),
+      ]);
+
+      const enriched = budgets.map((b) => {
+        const budgetAmount = parseFloat(b.monthlyBudget as any) || 0;
+        const matching = monthTxs.filter((t) => {
+          if (t.category !== b.category) return false;
+          if (b.subcategory && (t.subcategory || '') !== b.subcategory) return false;
+          if (b.budgetType === 'income') return t.type === 'income';
+          return t.type === 'expense';
+        });
+        const spent = matching.reduce((s, t) => s + (parseFloat(t.amount as any) || 0), 0);
+        const remaining = budgetAmount - spent;
+        const utilizationPct = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
+        return {
+          ...b,
+          currentMonthSpent: +spent.toFixed(2),
+          remaining: +remaining.toFixed(2),
+          utilizationPct: +utilizationPct.toFixed(2),
+          transactionsCount: matching.length,
+        };
+      });
+
+      res.json({
+        data: enriched,
+        meta: {
+          month: `${year}-${String(month).padStart(2, '0')}`,
+          periodStart: monthStart,
+          periodEnd: monthEnd,
+          totalBudget: +enriched.reduce((s, e) => s + (parseFloat(e.monthlyBudget as any) || 0), 0).toFixed(2),
+          totalSpent: +enriched.reduce((s, e) => s + e.currentMonthSpent, 0).toFixed(2),
+          count: enriched.length,
+        },
+      });
     } catch (error) {
       console.error("Error fetching public category budgets:", error);
       res.status(500).json({ message: "Failed to fetch category budgets" });
@@ -2404,30 +2678,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/budget/settings', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = parseInt(req.user.id);
-      const settingsData = { ...req.body, userId };
-      const settings = await storage.upsertBudgetSettings(settingsData);
-      res.json(settings);
-    } catch (error) {
-      console.error("Error updating budget settings:", error);
-      res.status(500).json({ message: "Failed to update budget settings" });
-    }
-  });
+  // Zod schema for strict validation on the upsert path
+  const budgetSettingsPayloadSchema = z.object({
+    needsPercentage: z.union([z.string(), z.number()]).transform((v) => String(v)),
+    wantsPercentage: z.union([z.string(), z.number()]).transform((v) => String(v)),
+    savingsPercentage: z.union([z.string(), z.number()]).transform((v) => String(v)),
+    monthlyIncome: z.union([z.string(), z.number(), z.null()]).optional().transform((v) =>
+      v === undefined || v === null || v === '' ? null : String(v)
+    ),
+    customCategories: z.any().optional(),
+  }).refine((data) => {
+    const n = parseFloat(data.needsPercentage);
+    const w = parseFloat(data.wantsPercentage);
+    const s = parseFloat(data.savingsPercentage);
+    return [n, w, s].every((x) => Number.isFinite(x) && x >= 0 && x <= 100);
+  }, { message: 'Percentages must be numbers between 0 and 100' })
+    .refine((data) => {
+      const n = parseFloat(data.needsPercentage);
+      const w = parseFloat(data.wantsPercentage);
+      const s = parseFloat(data.savingsPercentage);
+      return Math.abs((n + w + s) - 100) < 0.01;
+    }, { message: 'needsPercentage + wantsPercentage + savingsPercentage must equal 100' })
+    .refine((data) => {
+      if (data.monthlyIncome === null) return true;
+      const v = parseFloat(data.monthlyIncome);
+      return Number.isFinite(v) && v >= 0;
+    }, { message: 'monthlyIncome must be a non-negative number' });
 
-  app.put('/api/budget/settings/:id', isAuthenticated, async (req: any, res) => {
+  const handleBudgetSettingsUpsert = async (req: any, res: any) => {
     try {
       const userId = parseInt(req.user.id);
-      const settingsId = parseInt(req.params.id);
-      const settingsData = { ...req.body, userId, id: settingsId };
-      const settings = await storage.upsertBudgetSettings(settingsData);
+      const parsed = budgetSettingsPayloadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: 'Validazione fallita per le impostazioni del budget',
+          errors: parsed.error.flatten(),
+        });
+      }
+      const settings = await storage.upsertBudgetSettings({ ...parsed.data, userId } as any);
+      console.log(`[budget/settings] upsert ok userId=${userId} pct=${parsed.data.needsPercentage}/${parsed.data.wantsPercentage}/${parsed.data.savingsPercentage} income=${parsed.data.monthlyIncome}`);
       res.json(settings);
     } catch (error) {
-      console.error("Error updating budget settings:", error);
-      res.status(500).json({ message: "Failed to update budget settings" });
+      console.error('Error updating budget settings:', error);
+      res.status(500).json({ message: 'Impossibile salvare le impostazioni del budget' });
     }
-  });
+  };
+
+  // Single atomic upsert endpoint — POST is preferred; PUT kept for back-compat.
+  app.post('/api/budget/settings', isAuthenticated, handleBudgetSettingsUpsert);
+  app.put('/api/budget/settings/:id', isAuthenticated, handleBudgetSettingsUpsert);
 
   // Category budgets endpoints
   app.get('/api/category-budgets', isAuthenticated, async (req: any, res) => {
