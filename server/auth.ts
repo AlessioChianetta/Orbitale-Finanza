@@ -260,6 +260,63 @@ export const isAuthenticated = (req: any, res: any, next: any) => {
   next();
 };
 
+// Builds a short, non-reversible fingerprint of an API key so we can group log
+// entries by key (e.g. "rotated key vs current key") without persisting the key.
+function fingerprintApiKey(key: string | undefined): string | null {
+  if (!key || typeof key !== 'string') return null;
+  const head = key.slice(0, 4);
+  return `${head}…(${key.length})`;
+}
+
+// Mount BEFORE requireMasterApiKey on the /api/public/* mount so it captures
+// auth failures (401/403/404) as well as successful 2xx/5xx calls.
+// Logging is fire-and-forget; logging errors must never break the response path.
+export const publicApiCallLogger = (req: any, _res: any, next: any) => {
+  const start = Date.now();
+  const res = _res;
+
+  // Capture an error message if the route handler attached one via res.json({message}).
+  // We monkey-patch res.json on this request only.
+  const origJson = res.json.bind(res);
+  let capturedErrorMessage: string | null = null;
+  res.json = (body: any) => {
+    if (res.statusCode >= 400 && body && typeof body === 'object') {
+      const msg = (body.message ?? body.error);
+      if (typeof msg === 'string') capturedErrorMessage = msg.slice(0, 1000);
+    }
+    return origJson(body);
+  };
+
+  res.on('finish', () => {
+    const durationMs = Date.now() - start;
+    const queryString = Object.keys(req.query || {}).length
+      ? JSON.stringify(req.query).slice(0, 4000)
+      : null;
+    const ip = (req.headers['x-forwarded-for']?.toString().split(',')[0].trim()
+                || req.socket?.remoteAddress
+                || null);
+    const ua = (req.headers['user-agent'] || '').toString().slice(0, 512) || null;
+    const payload = {
+      apiKeyFingerprint: fingerprintApiKey(req.headers['x-api-key']?.toString()),
+      userEmail: (req.headers['x-user-email']?.toString() || null)?.slice(0, 255) || null,
+      userId: req.user?.id ? Number(req.user.id) : null,
+      method: req.method,
+      path: req.originalUrl?.split('?')[0]?.slice(0, 512) || req.path,
+      query: queryString,
+      statusCode: res.statusCode,
+      durationMs,
+      ip: ip?.slice(0, 64) || null,
+      userAgent: ua,
+      errorMessage: capturedErrorMessage,
+    };
+    // Fire-and-forget; do NOT await
+    storage.recordPublicApiCallLog(payload).catch((err) => {
+      console.error('Failed to record public API call log:', err?.message || err);
+    });
+  });
+  next();
+};
+
 // Middleware for public API authentication using Master API Key
 export const requireMasterApiKey = async (req: any, res: any, next: any) => {
   try {

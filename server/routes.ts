@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, requireAdmin, requireConsultant, isAdmin, isConsultant, requireMasterApiKey } from "./auth";
+import { setupAuth, isAuthenticated, requireAdmin, requireConsultant, isAdmin, isConsultant, requireMasterApiKey, publicApiCallLogger } from "./auth";
 import { db } from "./db";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 
@@ -86,6 +86,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register Cost Analysis router
   app.use('/api/cost-analysis', costAnalysisRouter);
+
+  // Audit every /api/public/* request (auth failures included).
+  // Must be registered BEFORE the public endpoints below.
+  app.use('/api/public', publicApiCallLogger);
 
   // ========================================
   // PUBLIC API ENDPOINTS (Master API Key Authentication)
@@ -791,6 +795,310 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching public cost analysis dashboard:", error);
       res.status(500).json({ message: "Failed to fetch cost analysis dashboard" });
+    }
+  });
+
+  // 9. PUBLIC: Net Worth - point-in-time snapshot of assets, liabilities, net.
+  // Adds breakdowns by asset type and a real-time portfolio valuation
+  // that is resilient to Finnhub failures.
+  app.get('/api/public/net-worth', requireMasterApiKey, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.user.id);
+      const [assets, liabilities, investments] = await Promise.all([
+        storage.getUserAssets(userId),
+        storage.getUserLiabilities(userId),
+        storage.getUserInvestments(userId),
+      ]);
+
+      let portfolioValue = 0;
+      let realtimeCount = 0;
+      let fallbackCount = 0;
+      await Promise.all(investments.map(async (inv) => {
+        const qty = parseFloat(inv.quantity || '0') || 0;
+        let price = parseFloat(inv.currentPrice || inv.averagePrice || '0') || 0;
+        let usedRealtime = false;
+        try {
+          const symbol = inv.symbol || inv.name;
+          let kind: 'stock' | 'crypto' | 'forex' | 'etf' = 'stock';
+          if (/BTC|ETH|ADA|DOT|SOL|MATIC|LINK|DOGE|XRP|LTC/i.test(symbol)) kind = 'crypto';
+          else if (/EUR|GBP|JPY|CHF|USD/i.test(symbol)) kind = 'forex';
+          else if (/ETF|VWCE|VTI|SPY|QQQ|VEA|VWO/i.test(symbol)) kind = 'etf';
+          const realPrice = await finnhubService.getPrice(symbol, kind);
+          if (realPrice && realPrice > 0) { price = realPrice; usedRealtime = true; }
+        } catch { /* fallback path */ }
+        if (usedRealtime) realtimeCount++; else fallbackCount++;
+        portfolioValue += qty * price;
+      }));
+
+      const assetsByType = assets.reduce((acc, a) => {
+        const t = a.type || 'other';
+        acc[t] = (acc[t] || 0) + (parseFloat(a.value as any) || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      const liabilitiesByType = liabilities.reduce((acc, l) => {
+        const t = l.type || 'other';
+        acc[t] = (acc[t] || 0) + (parseFloat(l.remainingAmount as any) || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      const totalAssetsManual = assets.reduce((s, a) => s + (parseFloat(a.value as any) || 0), 0);
+      const totalLiabilities = liabilities.reduce((s, l) => s + (parseFloat(l.remainingAmount as any) || 0), 0);
+      // Total assets uses live portfolio value in place of any "investment"-typed
+      // manual asset value, so we don't double count when the user also has investments.
+      const manualInvestmentValue = (assetsByType['investment'] || 0) + (assetsByType['investments'] || 0);
+      const totalAssets = totalAssetsManual - manualInvestmentValue + portfolioValue;
+      const netWorth = totalAssets - totalLiabilities;
+
+      const priceSource = investments.length === 0
+        ? 'none'
+        : (fallbackCount === 0 ? 'realtime' : (realtimeCount === 0 ? 'fallback' : 'mixed'));
+
+      res.json({
+        data: {
+          netWorth: +netWorth.toFixed(2),
+          totalAssets: +totalAssets.toFixed(2),
+          totalLiabilities: +totalLiabilities.toFixed(2),
+          portfolioValue: +portfolioValue.toFixed(2),
+          assetsByType: Object.fromEntries(
+            Object.entries(assetsByType).map(([k, v]) => [k, +v.toFixed(2)])
+          ),
+          liabilitiesByType: Object.fromEntries(
+            Object.entries(liabilitiesByType).map(([k, v]) => [k, +v.toFixed(2)])
+          ),
+        },
+        meta: {
+          assetsCount: assets.length,
+          liabilitiesCount: liabilities.length,
+          investmentsCount: investments.length,
+          priceSource,
+          realtimeCount,
+          fallbackCount,
+          asOf: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching public net-worth:', error);
+      res.status(500).json({ message: 'Failed to fetch net worth' });
+    }
+  });
+
+  // 10. PUBLIC: Investments Summary - portfolio aggregate with allocation breakdowns.
+  app.get('/api/public/investments/summary', requireMasterApiKey, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.user.id);
+      const investments = await storage.getUserInvestments(userId);
+
+      let totalValue = 0;
+      let totalCost = 0;
+      let realtimeCount = 0;
+      let fallbackCount = 0;
+      const byType: Record<string, { count: number; value: number }> = {};
+      const byCurrency: Record<string, { count: number; value: number }> = {};
+      const enriched = await Promise.all(investments.map(async (inv) => {
+        const qty = parseFloat(inv.quantity || '0') || 0;
+        const avg = parseFloat(inv.averagePrice || '0') || 0;
+        let price = parseFloat(inv.currentPrice || inv.averagePrice || '0') || 0;
+        let usedRealtime = false;
+        try {
+          const symbol = inv.symbol || inv.name;
+          let kind: 'stock' | 'crypto' | 'forex' | 'etf' = 'stock';
+          if (/BTC|ETH|ADA|DOT|SOL|MATIC|LINK|DOGE|XRP|LTC/i.test(symbol)) kind = 'crypto';
+          else if (/EUR|GBP|JPY|CHF|USD/i.test(symbol)) kind = 'forex';
+          else if (/ETF|VWCE|VTI|SPY|QQQ|VEA|VWO/i.test(symbol)) kind = 'etf';
+          const realPrice = await finnhubService.getPrice(symbol, kind);
+          if (realPrice && realPrice > 0) { price = realPrice; usedRealtime = true; }
+        } catch { /* fallback */ }
+        if (usedRealtime) realtimeCount++; else fallbackCount++;
+        const value = qty * price;
+        const cost = qty * avg;
+        totalValue += value;
+        totalCost += cost;
+        const t = inv.type || 'other';
+        byType[t] = byType[t] || { count: 0, value: 0 };
+        byType[t].count++;
+        byType[t].value += value;
+        const c = inv.currency || 'EUR';
+        byCurrency[c] = byCurrency[c] || { count: 0, value: 0 };
+        byCurrency[c].count++;
+        byCurrency[c].value += value;
+        return { id: inv.id, name: inv.name, symbol: inv.symbol, type: inv.type, value, cost };
+      }));
+
+      const round = (n: number) => +n.toFixed(2);
+      const top = [...enriched].sort((a, b) => b.value - a.value).slice(0, 5)
+        .map((p) => ({ ...p, value: round(p.value), cost: round(p.cost) }));
+
+      const pnl = totalValue - totalCost;
+      const pnlPct = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
+      const priceSource = investments.length === 0
+        ? 'none'
+        : (fallbackCount === 0 ? 'realtime' : (realtimeCount === 0 ? 'fallback' : 'mixed'));
+
+      res.json({
+        data: {
+          totalValue: round(totalValue),
+          totalCost: round(totalCost),
+          unrealizedPnL: round(pnl),
+          unrealizedPnLPct: round(pnlPct),
+          positionsCount: investments.length,
+          byType: Object.fromEntries(Object.entries(byType).map(([k, v]) => [k, {
+            count: v.count, value: round(v.value),
+            allocationPct: totalValue > 0 ? round((v.value / totalValue) * 100) : 0,
+          }])),
+          byCurrency: Object.fromEntries(Object.entries(byCurrency).map(([k, v]) => [k, {
+            count: v.count, value: round(v.value),
+            allocationPct: totalValue > 0 ? round((v.value / totalValue) * 100) : 0,
+          }])),
+          topPositions: top,
+        },
+        meta: {
+          priceSource, realtimeCount, fallbackCount,
+          asOf: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching public investments summary:', error);
+      res.status(500).json({ message: 'Failed to fetch investments summary' });
+    }
+  });
+
+  // 11. PUBLIC: Monthly Report - aggregated monthly snapshot.
+  // Query: month=YYYY-MM (default: current month)
+  app.get('/api/public/monthly-report', requireMasterApiKey, async (req: any, res) => {
+    try {
+      const userId = parseInt(req.user.id);
+      const monthParam = (req.query.month as string | undefined)?.trim();
+      const now = new Date();
+      let year: number, month: number;
+      if (monthParam) {
+        const m = monthParam.match(/^(\d{4})-(\d{2})$/);
+        if (!m) return res.status(400).json({ message: 'Invalid month. Expected YYYY-MM.' });
+        year = parseInt(m[1], 10);
+        month = parseInt(m[2], 10);
+        if (month < 1 || month > 12) return res.status(400).json({ message: 'Invalid month. Month must be 01-12.' });
+      } else {
+        year = now.getFullYear();
+        month = now.getMonth() + 1;
+      }
+      const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const periodStart = `${monthStr}-01`;
+      const periodEnd = `${monthStr}-${String(lastDay).padStart(2, '0')}`;
+
+      const [txs, budgetSettings] = await Promise.all([
+        storage.getUserTransactions(userId, Number.MAX_SAFE_INTEGER, periodStart, periodEnd),
+        storage.getUserBudgetSettings(userId),
+      ]);
+
+      const totals = { income: 0, expense: 0, investment: 0, goalContribution: 0, goalRefund: 0, transfer: 0 };
+      const byCategory: Record<string, { count: number; total: number }> = {};
+      const byBudgetCategory: Record<string, { count: number; total: number }> = { needs: { count: 0, total: 0 }, wants: { count: 0, total: 0 }, savings: { count: 0, total: 0 } };
+      const merchantTotals: Record<string, { count: number; total: number }> = {};
+
+      for (const t of txs) {
+        const amount = parseFloat(t.amount as any) || 0;
+        switch (t.type) {
+          case 'income': totals.income += amount; break;
+          case 'expense': totals.expense += amount; break;
+          case 'investment': totals.investment += amount; break;
+          case 'goal_contribution': totals.goalContribution += amount; break;
+          case 'goal_refund': totals.goalRefund += amount; break;
+          case 'transfer': totals.transfer += amount; break;
+        }
+        if (t.type === 'expense') {
+          const cat = t.category || 'Altro';
+          byCategory[cat] = byCategory[cat] || { count: 0, total: 0 };
+          byCategory[cat].count++;
+          byCategory[cat].total += amount;
+          const bc = t.budgetCategory;
+          if (bc && byBudgetCategory[bc]) {
+            byBudgetCategory[bc].count++;
+            byBudgetCategory[bc].total += amount;
+          }
+          const merchant = (t.merchant || t.description || '').trim() || 'Sconosciuto';
+          merchantTotals[merchant] = merchantTotals[merchant] || { count: 0, total: 0 };
+          merchantTotals[merchant].count++;
+          merchantTotals[merchant].total += amount;
+        }
+      }
+
+      const round = (n: number) => +n.toFixed(2);
+      const net = totals.income - totals.expense;
+      const savingsRate = totals.income > 0 ? (net / totals.income) * 100 : 0;
+
+      const topMerchants = Object.entries(merchantTotals)
+        .sort((a, b) => b[1].total - a[1].total)
+        .slice(0, 10)
+        .map(([merchant, v]) => ({ merchant, count: v.count, total: round(v.total) }));
+
+      const topCategories = Object.entries(byCategory)
+        .sort((a, b) => b[1].total - a[1].total)
+        .slice(0, 10)
+        .map(([category, v]) => ({ category, count: v.count, total: round(v.total) }));
+
+      // Budget comparison vs the configured 50/30/20 (or custom) split.
+      let budgetComparison: any = null;
+      if (budgetSettings && budgetSettings.monthlyIncome) {
+        const mi = parseFloat(budgetSettings.monthlyIncome as any) || 0;
+        const np = parseFloat((budgetSettings.needsPercentage ?? '50') as any) || 0;
+        const wp = parseFloat((budgetSettings.wantsPercentage ?? '30') as any) || 0;
+        const sp = parseFloat((budgetSettings.savingsPercentage ?? '20') as any) || 0;
+        const target = {
+          needs: round((mi * np) / 100),
+          wants: round((mi * wp) / 100),
+          savings: round((mi * sp) / 100),
+        };
+        const actual = {
+          needs: round(byBudgetCategory.needs.total),
+          wants: round(byBudgetCategory.wants.total),
+          savings: round(byBudgetCategory.savings.total),
+        };
+        budgetComparison = {
+          target,
+          actual,
+          delta: {
+            needs: round(target.needs - actual.needs),
+            wants: round(target.wants - actual.wants),
+            savings: round(target.savings - actual.savings),
+          },
+          utilizationPct: {
+            needs: target.needs > 0 ? round((actual.needs / target.needs) * 100) : 0,
+            wants: target.wants > 0 ? round((actual.wants / target.wants) * 100) : 0,
+            savings: target.savings > 0 ? round((actual.savings / target.savings) * 100) : 0,
+          },
+        };
+      }
+
+      res.json({
+        data: {
+          totals: {
+            income: round(totals.income),
+            expense: round(totals.expense),
+            investment: round(totals.investment),
+            goalContribution: round(totals.goalContribution),
+            goalRefund: round(totals.goalRefund),
+            transfer: round(totals.transfer),
+            net: round(net),
+            savingsRate: round(savingsRate),
+          },
+          byBudgetCategory: Object.fromEntries(
+            Object.entries(byBudgetCategory).map(([k, v]) => [k, { count: v.count, total: round(v.total) }])
+          ),
+          topCategories,
+          topMerchants,
+          budgetComparison,
+        },
+        meta: {
+          month: monthStr,
+          periodStart,
+          periodEnd,
+          transactionsCount: txs.length,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching public monthly report:', error);
+      res.status(500).json({ message: 'Failed to fetch monthly report' });
     }
   });
 

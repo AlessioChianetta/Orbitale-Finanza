@@ -11,6 +11,7 @@ import {
   achievements,
   userProgress,
   budgetSettings,
+  publicApiCallLogs,
   categoryRules,
   accountArchitecture,
   savingsSubAccounts,
@@ -58,6 +59,7 @@ import {
   type InsertUserProgress,
   type BudgetSettings,
   type InsertBudgetSettings,
+  type InsertPublicApiCallLog,
   type CategoryRule,
   type InsertCategoryRule,
   type AccountArchitecture,
@@ -561,6 +563,16 @@ export class DatabaseStorage implements IStorage {
   async getUserBudgetSettings(userId: number): Promise<BudgetSettings | undefined> {
     const [result] = await db.select().from(budgetSettings).where(eq(budgetSettings.userId, userId));
     return result;
+  }
+
+  async recordPublicApiCallLog(entry: InsertPublicApiCallLog): Promise<void> {
+    // Fire-and-forget insert from the publicApiCallLogger middleware.
+    // Swallow errors here so a logging failure never bubbles into a response.
+    try {
+      await db.insert(publicApiCallLogs).values(entry);
+    } catch (err) {
+      console.error('recordPublicApiCallLog failed:', (err as any)?.message || err);
+    }
   }
 
   async upsertBudgetSettings(settings: InsertBudgetSettings): Promise<BudgetSettings> {

@@ -15,6 +15,13 @@
       "when": 1748304000000,
       "tag": "0002_budget_settings_unique_user",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1748390400000,
+      "tag": "0003_public_api_call_logs",
+      "breakpoints": true
     }
   ]
 }

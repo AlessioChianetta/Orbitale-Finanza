@@ -255,7 +255,156 @@ Per-category budget rows with **current-month spent**, remaining, and utilizatio
 
 ---
 
-## 4. Operational notes for the training agent
+### 3.6 `GET /api/public/goals`
+
+User's financial goals enriched with real-time linked-investment value.
+Returns an array.
+
+---
+
+### 3.7 `GET /api/public/investments`
+
+All investment positions with real-time prices when Finnhub is available.
+Returns an array.
+
+---
+
+### 3.8 `GET /api/public/investments/summary`
+
+Portfolio aggregate: total value, total cost, unrealized P&L, allocation by
+type and by currency, top 5 positions. Resilient to Finnhub failures (see
+`meta.priceSource`: `realtime` / `fallback` / `mixed` / `none`).
+
+```jsonc
+{
+  "data": {
+    "totalValue": 12450.30,
+    "totalCost": 10000.00,
+    "unrealizedPnL": 2450.30,
+    "unrealizedPnLPct": 24.50,
+    "positionsCount": 7,
+    "byType":     { "etf":    { "count": 4, "value": 8400.10, "allocationPct": 67.47 } },
+    "byCurrency": { "EUR":    { "count": 6, "value": 11200.0, "allocationPct": 89.95 } },
+    "topPositions": [ { "id": 12, "name": "VWCE", "symbol": "VWCE", "type": "etf", "value": 5400.00, "cost": 4500.00 } ]
+  },
+  "meta": {
+    "priceSource": "realtime",
+    "realtimeCount": 6,
+    "fallbackCount": 1,
+    "asOf": "2026-05-27T10:14:02.014Z"
+  }
+}
+```
+
+---
+
+### 3.9 `GET /api/public/net-worth`
+
+Point-in-time net-worth snapshot: assets, liabilities, and live portfolio
+value, plus breakdowns by asset/liability type. Avoids double-counting any
+manual asset of type `investment` when the user also tracks individual
+positions.
+
+```jsonc
+{
+  "data": {
+    "netWorth": 38420.10,
+    "totalAssets": 52300.50,
+    "totalLiabilities": 13880.40,
+    "portfolioValue": 12450.30,
+    "assetsByType":      { "liquidity": 8200.00, "property": 30000.00, "vehicle": 1650.20 },
+    "liabilitiesByType": { "mortgage": 12000.00, "credit_card": 1880.40 }
+  },
+  "meta": {
+    "assetsCount": 5,
+    "liabilitiesCount": 2,
+    "investmentsCount": 7,
+    "priceSource": "realtime",
+    "realtimeCount": 6,
+    "fallbackCount": 1,
+    "asOf": "2026-05-27T10:14:02.014Z"
+  }
+}
+```
+
+---
+
+### 3.10 `GET /api/public/monthly-report`
+
+Aggregated monthly snapshot: totals by type, savings rate, top 10 expense
+categories, top 10 merchants, plus a budget-vs-actual comparison against the
+user's configured 50/30/20 split.
+
+**Query:** `?month=YYYY-MM` (default: current month). Invalid months return `400`.
+
+```jsonc
+{
+  "data": {
+    "totals": {
+      "income": 2500.00, "expense": 1820.50, "investment": 200.00,
+      "goalContribution": 100.00, "goalRefund": 0, "transfer": 0,
+      "net": 679.50, "savingsRate": 27.18
+    },
+    "byBudgetCategory": {
+      "needs":   { "count": 28, "total": 1100.20 },
+      "wants":   { "count": 14, "total":  520.30 },
+      "savings": { "count":  3, "total":  200.00 }
+    },
+    "topCategories": [ { "category": "Alimentari e Spesa", "count": 12, "total": 410.20 } ],
+    "topMerchants":  [ { "merchant":  "Esselunga",          "count":  8, "total": 280.45 } ],
+    "budgetComparison": {
+      "target":         { "needs": 1250.00, "wants": 750.00, "savings": 500.00 },
+      "actual":         { "needs": 1100.20, "wants": 520.30, "savings": 200.00 },
+      "delta":          { "needs":  149.80, "wants": 229.70, "savings": 300.00 },
+      "utilizationPct": { "needs":   88.02, "wants":  69.37, "savings":  40.00 }
+    }
+  },
+  "meta": {
+    "month": "2026-05",
+    "periodStart": "2026-05-01",
+    "periodEnd":   "2026-05-31",
+    "transactionsCount": 47
+  }
+}
+```
+
+`budgetComparison` is `null` when the user has not configured a monthly income.
+
+---
+
+### 3.11 `GET /api/public/cost-analysis/dashboard`
+
+Business analysis KPIs (break-even daily + monthly). Query: `?year=YYYY&month=MM`.
+
+---
+
+## 4. Audit logging
+
+Every request to `/api/public/*` (including auth failures) is logged in the
+`public_api_call_logs` table with: timestamp, API-key fingerprint
+(first-4 chars + length — never the raw key), user email, user id, method,
+path, query, status code, duration in ms, ip, user-agent, and error message
+(when status ≥ 400). Logging is fire-and-forget and never blocks the response.
+
+Useful queries for the API owner:
+
+```sql
+-- Top consumers in the last 24h
+SELECT user_email, COUNT(*) AS calls, ROUND(AVG(duration_ms)) AS avg_ms
+FROM public_api_call_logs
+WHERE created_at > now() - interval '24 hours'
+GROUP BY user_email ORDER BY calls DESC;
+
+-- Recent failures
+SELECT created_at, status_code, path, error_message, user_email
+FROM public_api_call_logs
+WHERE status_code >= 400 AND created_at > now() - interval '7 days'
+ORDER BY created_at DESC LIMIT 100;
+```
+
+---
+
+## 5. Operational notes for the training agent
 
 1. **Idempotency:** every endpoint is a pure `GET`; safe to retry.
 2. **Rate limiting:** there is no hard limiter today, but please stay under ~5 req/s per
@@ -271,7 +420,7 @@ Per-category budget rows with **current-month spent**, remaining, and utilizatio
 
 ---
 
-## 5. Versioning
+## 6. Versioning
 
 This document describes the public API as of **2026-05-27**. Breaking changes will be
 announced before being shipped. Additive changes (new fields, new endpoints) may appear

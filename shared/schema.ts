@@ -195,6 +195,29 @@ export const userProgress = pgTable("user_progress", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Public-API call log: one row per request hitting /api/public/*.
+// Used for audit, debugging, and per-key usage analytics.
+// We store only a short fingerprint of the API key (first 4 chars + length),
+// never the key itself, to avoid leaking credentials via the log table.
+export const publicApiCallLogs = pgTable("public_api_call_logs", {
+  id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  apiKeyFingerprint: varchar("api_key_fingerprint", { length: 32 }),
+  userEmail: varchar("user_email", { length: 255 }),
+  userId: integer("user_id"),
+  method: varchar("method", { length: 8 }).notNull(),
+  path: varchar("path", { length: 512 }).notNull(),
+  query: text("query"),
+  statusCode: integer("status_code").notNull(),
+  durationMs: integer("duration_ms").notNull(),
+  ip: varchar("ip", { length: 64 }),
+  userAgent: varchar("user_agent", { length: 512 }),
+  errorMessage: text("error_message"),
+});
+
+export type PublicApiCallLog = typeof publicApiCallLogs.$inferSelect;
+export type InsertPublicApiCallLog = typeof publicApiCallLogs.$inferInsert;
+
 // Budget settings and preferences
 export const budgetSettings = pgTable("budget_settings", {
   id: serial("id").primaryKey(),
