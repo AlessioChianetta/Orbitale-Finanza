@@ -8,6 +8,13 @@
       "when": 1756327720032,
       "tag": "0000_clumsy_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748304000000,
+      "tag": "0002_budget_settings_unique_user",
+      "breakpoints": true
     }
   ]
 }

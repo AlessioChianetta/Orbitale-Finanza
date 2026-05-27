@@ -198,7 +198,7 @@ export const userProgress = pgTable("user_progress", {
 // Budget settings and preferences
 export const budgetSettings = pgTable("budget_settings", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id).unique(),
   needsPercentage: decimal("needs_percentage", { precision: 5, scale: 2 }).default("50.00"), // Default 50%
   wantsPercentage: decimal("wants_percentage", { precision: 5, scale: 2 }).default("30.00"), // Default 30%
   savingsPercentage: decimal("savings_percentage", { precision: 5, scale: 2 }).default("20.00"), // Default 20%

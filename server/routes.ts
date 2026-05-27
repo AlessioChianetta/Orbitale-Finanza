@@ -388,6 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   merchant (substring, case-insensitive)
   //   minAmount, maxAmount (numbers)
   //   limit (integer, omit = no limit), offset (integer)
+  //   cursor (opaque string from meta.nextCursor — preferred for stable paging)
   //   legacy=1 → returns bare array (back-compat)
   app.get('/api/public/transactions', requireMasterApiKey, async (req: any, res) => {
     try {
@@ -398,7 +399,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startDate = q.startDate;
       const endDate = q.endDate;
       const limit = q.limit ? Math.max(0, parseInt(q.limit, 10) || 0) : undefined;
-      const offset = q.offset ? Math.max(0, parseInt(q.offset, 10) || 0) : 0;
+      let offset = q.offset ? Math.max(0, parseInt(q.offset, 10) || 0) : 0;
+
+      // Cursor pagination — opaque base64(JSON) of { o: offset, f: filterFingerprint }.
+      // Cursor takes precedence over `offset` when present and valid.
+      // Any malformed cursor (bad base64/JSON, missing/invalid o, missing f) → 400.
+      let cursorOffset: number | null = null;
+      let cursorFingerprint: string | null = null;
+      if (q.cursor) {
+        let decoded: any;
+        try {
+          decoded = JSON.parse(Buffer.from(q.cursor, 'base64').toString('utf8'));
+        } catch {
+          return res.status(400).json({ message: 'Invalid cursor' });
+        }
+        if (
+          !decoded ||
+          typeof decoded.o !== 'number' ||
+          !Number.isInteger(decoded.o) ||
+          decoded.o < 0 ||
+          typeof decoded.f !== 'string' ||
+          decoded.f.length === 0
+        ) {
+          return res.status(400).json({ message: 'Invalid cursor' });
+        }
+        cursorOffset = decoded.o;
+        cursorFingerprint = decoded.f;
+      }
+      if (cursorOffset !== null) offset = cursorOffset;
       const minAmount = q.minAmount !== undefined ? parseFloat(q.minAmount) : undefined;
       const maxAmount = q.maxAmount !== undefined ? parseFloat(q.maxAmount) : undefined;
       const merchantQ = q.merchant?.trim().toLowerCase();
@@ -468,6 +496,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(paged);
       }
 
+      // Filter fingerprint binds a cursor to the filter set so a cursor issued for
+      // one filter cannot be silently reused with a different one.
+      const filterFingerprint = Buffer.from(JSON.stringify({
+        s: startDate ?? '', e: endDate ?? '', t: q.type ?? '',
+        c: q.category ?? '', sc: q.subcategory ?? '', a: q.accountType ?? '',
+        bc: q.budgetCategory ?? '', m: merchantQ ?? '',
+        min: minAmount ?? '', max: maxAmount ?? '',
+      })).toString('base64');
+
+      if (cursorFingerprint && cursorFingerprint !== filterFingerprint) {
+        return res.status(400).json({ message: 'Cursor does not match the current filters' });
+      }
+
+      const nextOffset = offset + paged.length;
+      const hasMore = nextOffset < filtered.length;
+      const nextCursor = hasMore
+        ? Buffer.from(JSON.stringify({ o: nextOffset, f: filterFingerprint })).toString('base64')
+        : null;
+
       res.json({
         data: paged,
         meta: {
@@ -475,6 +522,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           returned: paged.length,
           offset,
           limit: limit ?? null,
+          hasMore,
+          nextCursor,
           period: { from: periodMin, to: periodMax },
           totals: {
             income: +totals.income.toFixed(2),
@@ -2678,32 +2727,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Zod schema for strict validation on the upsert path
+  // Zod schema for strict validation on the upsert path.
+  // Numeric coercion uses z.coerce.number().finite() so "50abc" is rejected.
+  const percentageSchema = z.coerce.number().finite().min(0).max(100);
+  const incomeSchema = z.coerce.number().finite().min(0);
+
+  // customCategories: array of user-defined budget splits.
+  // Shape mirrors what BudgetSetup / CategoryBudgetManager produce/consume.
+  const customCategoryItemSchema = z.object({
+    name: z.string().trim().min(1).max(120),
+    percentage: z.coerce.number().finite().min(0).max(100).optional(),
+    monthlyBudget: z.coerce.number().finite().min(0).optional(),
+    budgetType: z.enum(['needs', 'wants', 'savings', 'expense', 'income']).optional(),
+    color: z.string().trim().max(32).optional(),
+    icon: z.string().trim().max(64).optional(),
+  }).passthrough(); // tolerate harmless extra fields without rejecting
+
   const budgetSettingsPayloadSchema = z.object({
-    needsPercentage: z.union([z.string(), z.number()]).transform((v) => String(v)),
-    wantsPercentage: z.union([z.string(), z.number()]).transform((v) => String(v)),
-    savingsPercentage: z.union([z.string(), z.number()]).transform((v) => String(v)),
-    monthlyIncome: z.union([z.string(), z.number(), z.null()]).optional().transform((v) =>
-      v === undefined || v === null || v === '' ? null : String(v)
-    ),
-    customCategories: z.any().optional(),
+    needsPercentage: percentageSchema.transform((v) => v.toFixed(2)),
+    wantsPercentage: percentageSchema.transform((v) => v.toFixed(2)),
+    savingsPercentage: percentageSchema.transform((v) => v.toFixed(2)),
+    monthlyIncome: z.preprocess(
+      (v) => (v === undefined || v === null || v === '' ? null : v),
+      z.union([z.null(), incomeSchema]).transform((v) => (v === null ? null : v.toFixed(2))),
+    ).optional().transform((v) => (v ?? null)),
+    customCategories: z.array(customCategoryItemSchema).max(50).optional().nullable(),
   }).refine((data) => {
-    const n = parseFloat(data.needsPercentage);
-    const w = parseFloat(data.wantsPercentage);
-    const s = parseFloat(data.savingsPercentage);
-    return [n, w, s].every((x) => Number.isFinite(x) && x >= 0 && x <= 100);
-  }, { message: 'Percentages must be numbers between 0 and 100' })
-    .refine((data) => {
-      const n = parseFloat(data.needsPercentage);
-      const w = parseFloat(data.wantsPercentage);
-      const s = parseFloat(data.savingsPercentage);
-      return Math.abs((n + w + s) - 100) < 0.01;
-    }, { message: 'needsPercentage + wantsPercentage + savingsPercentage must equal 100' })
-    .refine((data) => {
-      if (data.monthlyIncome === null) return true;
-      const v = parseFloat(data.monthlyIncome);
-      return Number.isFinite(v) && v >= 0;
-    }, { message: 'monthlyIncome must be a non-negative number' });
+    const sum = parseFloat(data.needsPercentage) + parseFloat(data.wantsPercentage) + parseFloat(data.savingsPercentage);
+    return Math.abs(sum - 100) < 0.01;
+  }, { message: 'needsPercentage + wantsPercentage + savingsPercentage must equal 100' });
 
   const handleBudgetSettingsUpsert = async (req: any, res: any) => {
     try {

@@ -136,8 +136,14 @@ aggregates**. There is no silent cap: omitting `limit` returns every matching ro
 | `minAmount`      | number    | `amount >= minAmount`.                                              |
 | `maxAmount`      | number    | `amount <= maxAmount`.                                              |
 | `limit`          | integer   | Max rows returned. Omit = unlimited.                                |
-| `offset`         | integer   | Pagination offset (default `0`).                                    |
+| `offset`         | integer   | Pagination offset (default `0`). Ignored when `cursor` is provided. |
+| `cursor`         | string    | Opaque cursor returned in `meta.nextCursor`. Preferred over `offset`. |
 | `legacy`         | `1` / `true` | Return a bare array instead of the `{data, meta}` envelope (back-compat). |
+
+**Cursor pagination:** when `meta.hasMore` is `true`, `meta.nextCursor` is an opaque
+base64 string. Send it back in the next request as `?cursor=…` to fetch the next page.
+The cursor is bound to the current filter set — reusing it with different filters returns
+`400`. When you have no more pages, `nextCursor` is `null`.
 
 **Default response shape (no `legacy`):**
 
@@ -149,6 +155,8 @@ aggregates**. There is no silent cap: omitting `limit` returns every matching ro
     "returned": 100,
     "offset": 0,
     "limit": 100,
+    "hasMore": true,
+    "nextCursor": "eyJvIjoxMDAsImYiOiJ...==",
     "period": { "from": "2024-01-03", "to": "2026-05-27" },
     "totals": {
       "income": 45230.10,

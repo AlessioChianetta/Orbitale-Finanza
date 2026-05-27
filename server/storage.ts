@@ -564,28 +564,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertBudgetSettings(settings: InsertBudgetSettings): Promise<BudgetSettings> {
-    // Check if budget settings already exist for this user
-    const existing = await db.select().from(budgetSettings).where(eq(budgetSettings.userId, settings.userId));
-
-    if (existing.length > 0) {
-      // Update existing record
-      const [result] = await db.update(budgetSettings)
-        .set({
+    // Atomic upsert: relies on UNIQUE(user_id) constraint on budget_settings.
+    // A single INSERT ... ON CONFLICT (user_id) DO UPDATE eliminates the race window
+    // between a separate SELECT and INSERT/UPDATE under concurrent requests.
+    const [result] = await db
+      .insert(budgetSettings)
+      .values(settings)
+      .onConflictDoUpdate({
+        target: budgetSettings.userId,
+        set: {
           needsPercentage: settings.needsPercentage,
           wantsPercentage: settings.wantsPercentage,
           savingsPercentage: settings.savingsPercentage,
           monthlyIncome: settings.monthlyIncome,
           customCategories: settings.customCategories,
-          updatedAt: new Date()
-        })
-        .where(eq(budgetSettings.userId, settings.userId))
-        .returning();
-      return result;
-    } else {
-      // Insert new record
-      const [result] = await db.insert(budgetSettings).values(settings).returning();
-      return result;
-    }
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
   }
 
   // Educational Content methods
