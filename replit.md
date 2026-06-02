@@ -162,6 +162,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**Partner SSO Auto-Login (June 2, 2026)**
+- Added server-to-server endpoints authenticated by shared `X-API-Key` only (never browser):
+  * `POST /api/public/users/provision` — idempotent user provisioning (safe under concurrent calls)
+  * `POST /api/public/auth/sso-link` — mints a single-use, short-lived (≤120s) SSO login URL
+- Added browser route `GET /sso?token=...` that validates+consumes the token, regenerates the session, logs the user in, and redirects to `/dashboard` (failures redirect to `/auth`)
+- New `sso_tokens` table stores only a SHA-256 hash of the token; consume is atomic (single-use guaranteed under concurrency)
+- Session cookie set to `SameSite=None; Secure; HttpOnly` in production so auto-login works inside a cross-origin iframe
+- SSO/token response bodies are redacted from request logs; endpoints are rate-limited
+- Requires `MASTER_API_KEY` secret in each environment (production managed by the user); optional `APP_BASE_URL` overrides the login URL host
+- NOTE: the `SameSite=None` change relaxes browser CSRF protection — see follow-up task to add CSRF defenses
+
 **Transaction Edit Feature & Debiti Category (October 23, 2025)**
 - Implemented EditTransactionDialog component for modifying existing transactions
 - Added PATCH /api/transactions/:id endpoint in backend with ownership verification

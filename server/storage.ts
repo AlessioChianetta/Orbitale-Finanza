@@ -60,6 +60,9 @@ import {
   type BudgetSettings,
   type InsertBudgetSettings,
   type InsertPublicApiCallLog,
+  ssoTokens,
+  type SsoToken,
+  type InsertSsoToken,
   type CategoryRule,
   type InsertCategoryRule,
   type AccountArchitecture,
@@ -103,7 +106,7 @@ import {
   type InsertClientProgress,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, or, isNull, lte, gte, asc, sql } from "drizzle-orm";
+import { eq, and, desc, or, isNull, lte, gte, gt, asc, sql } from "drizzle-orm";
 
 // Create alias for consistency with existing code
 const accountArchitectures = accountArchitecture;
@@ -114,6 +117,10 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: Omit<UpsertUser, 'id'>): Promise<User>;
   updateUser(id: number, user: Partial<UpsertUser>): Promise<User>;
+
+  // SSO single-use token operations (partner auto-login)
+  createSsoToken(token: InsertSsoToken): Promise<SsoToken>;
+  consumeSsoToken(tokenHash: string): Promise<SsoToken | undefined>;
 
   // Asset operations
   getUserAssets(userId: number): Promise<Asset[]>;
@@ -573,6 +580,30 @@ export class DatabaseStorage implements IStorage {
     } catch (err) {
       console.error('recordPublicApiCallLog failed:', (err as any)?.message || err);
     }
+  }
+
+  async createSsoToken(token: InsertSsoToken): Promise<SsoToken> {
+    const [row] = await db.insert(ssoTokens).values(token).returning();
+    return row;
+  }
+
+  async consumeSsoToken(tokenHash: string): Promise<SsoToken | undefined> {
+    // Atomically consume the token: mark it as consumed ONLY if it has not been
+    // consumed yet AND has not expired. This single UPDATE...RETURNING closes the
+    // race window so a token can never be used twice, even under concurrent requests.
+    const now = new Date();
+    const [row] = await db
+      .update(ssoTokens)
+      .set({ consumedAt: now })
+      .where(
+        and(
+          eq(ssoTokens.tokenHash, tokenHash),
+          isNull(ssoTokens.consumedAt),
+          gt(ssoTokens.expiresAt, now),
+        ),
+      )
+      .returning();
+    return row;
   }
 
   async upsertBudgetSettings(settings: InsertBudgetSettings): Promise<BudgetSettings> {

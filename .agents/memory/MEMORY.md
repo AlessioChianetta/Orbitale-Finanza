@@ -1,0 +1,1 @@
+- [drizzle-kit push hangs](drizzle-kit-push-env.md) — `npm run db:push` blocks on an interactive prompt in this env; apply schema via direct SQL matching the Drizzle table instead.

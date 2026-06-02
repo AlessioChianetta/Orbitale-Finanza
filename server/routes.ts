@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, requireAdmin, requireConsultant, isAdmin, isConsultant, requireMasterApiKey, publicApiCallLogger } from "./auth";
+import { setupAuth, isAuthenticated, requireAdmin, requireConsultant, isAdmin, isConsultant, requireMasterApiKey, requireApiKeyOnly, hashPassword, publicApiCallLogger } from "./auth";
+import rateLimit from "express-rate-limit";
+import { createHash, randomBytes } from "crypto";
 import { db } from "./db";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 
@@ -90,6 +92,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Audit every /api/public/* request (auth failures included).
   // Must be registered BEFORE the public endpoints below.
   app.use('/api/public', publicApiCallLogger);
+
+  // ========================================
+  // SSO / PROVISIONING (server-to-server, X-API-Key only)
+  // ========================================
+  // These endpoints let the partner app create accounts and mint single-use
+  // auto-login links. They are protected by the shared API key only and must
+  // never be called from the browser.
+
+  // Rate limiters: protect the secret-key endpoints from brute force / abuse.
+  const ssoApiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 60, // 60 requests / minute / IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { ok: false, error: "Too many requests" },
+  });
+
+  // The public /sso landing page is consumed by end-user browsers; allow more
+  // headroom but still cap to blunt token-guessing attempts.
+  const ssoLandingLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const normalizeEmail = (value: unknown): string | null => {
+    if (typeof value !== "string") return null;
+    const email = value.trim().toLowerCase();
+    if (!email || email.length > 255 || !EMAIL_RE.test(email)) return null;
+    return email;
+  };
+  const sha256Hex = (input: string): string =>
+    createHash("sha256").update(input).digest("hex");
+
+  // 1. PROVISION: idempotently create the user if missing.
+  app.post('/api/public/users/provision', ssoApiLimiter, requireApiKeyOnly, async (req, res) => {
+    try {
+      const email = normalizeEmail(req.body?.email);
+      if (!email) {
+        return res.status(400).json({ ok: false, error: "Invalid or missing email" });
+      }
+
+      const existing = await storage.getUserByEmail(email);
+      if (existing) {
+        // Never error on an existing user — provisioning is idempotent.
+        return res.json({ ok: true, userId: String(existing.id), email: existing.email, created: false });
+      }
+
+      const firstName = typeof req.body?.firstName === "string" ? req.body.firstName.trim() : "";
+      const lastName = typeof req.body?.lastName === "string" ? req.body.lastName.trim() : "";
+
+      // No usable password is communicated: account is reachable only via SSO.
+      // We still store a strong random hash so password login can never succeed.
+      const randomSecret = randomBytes(32).toString("hex");
+      const hashedPassword = await hashPassword(randomSecret);
+
+      try {
+        const user = await storage.createUser({
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+        });
+        return res.json({ ok: true, userId: String(user.id), email: user.email, created: true });
+      } catch (insertErr: any) {
+        // Race: a concurrent provision for the same email already created the user.
+        // The UNIQUE(email) constraint (Postgres 23505) makes this safe to treat
+        // as idempotent success rather than an error.
+        if (insertErr?.code === "23505") {
+          const winner = await storage.getUserByEmail(email);
+          if (winner) {
+            return res.json({ ok: true, userId: String(winner.id), email: winner.email, created: false });
+          }
+        }
+        throw insertErr;
+      }
+    } catch (error) {
+      console.error("Provision error:", (error as any)?.message || error);
+      return res.status(500).json({ ok: false, error: "Internal error" });
+    }
+  });
+
+  // 2. SSO-LINK: mint a single-use, short-lived auto-login URL.
+  app.post('/api/public/auth/sso-link', ssoApiLimiter, requireApiKeyOnly, async (req, res) => {
+    try {
+      const email = normalizeEmail(req.body?.email);
+      if (!email) {
+        return res.status(400).json({ ok: false, error: "Invalid or missing email" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ ok: false, error: "User not found" });
+      }
+
+      const expiresInSeconds = 90; // TTL <= 120s as required
+      const token = randomBytes(32).toString("hex"); // 256-bit unguessable token
+      const tokenHash = sha256Hex(token); // store only the hash
+
+      await storage.createSsoToken({
+        tokenHash,
+        userId: user.id,
+        email: user.email,
+        expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
+      });
+
+      // Prefer an explicit configured base URL; otherwise derive from the request
+      // (trust proxy is enabled, so protocol reflects x-forwarded-proto).
+      const baseUrl = (process.env.APP_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
+      const loginUrl = `${baseUrl}/sso?token=${token}`;
+
+      return res.json({ ok: true, loginUrl, expiresInSeconds });
+    } catch (error) {
+      console.error("SSO-link error:", (error as any)?.message || error);
+      return res.status(500).json({ ok: false, error: "Internal error" });
+    }
+  });
+
+  // 3. SSO LANDING: validate + consume the token, establish the session, redirect.
+  // Server-side handling so the session cookie is set during a first-party-style
+  // navigation (the redirect), maximizing iframe compatibility.
+  app.get('/sso', ssoLandingLimiter, async (req: any, res) => {
+    const fail = () => res.redirect('/auth');
+    try {
+      const token = typeof req.query.token === "string" ? req.query.token : "";
+      if (!token) return fail();
+
+      const tokenHash = sha256Hex(token);
+      const consumed = await storage.consumeSsoToken(tokenHash); // atomic single-use
+      if (!consumed) return fail(); // invalid, already used, or expired
+
+      const user = await storage.getUser(consumed.userId);
+      if (!user) return fail();
+
+      // Regenerate the session (prevents fixation), then log the user in.
+      req.session.regenerate((regenErr: any) => {
+        if (regenErr) {
+          console.error("SSO session regenerate error:", regenErr?.message || regenErr);
+          return fail();
+        }
+        req.login(user, (loginErr: any) => {
+          if (loginErr) {
+            console.error("SSO login error:", loginErr?.message || loginErr);
+            return fail();
+          }
+          return res.redirect('/dashboard');
+        });
+      });
+    } catch (error) {
+      console.error("SSO landing error:", (error as any)?.message || error);
+      return fail();
+    }
+  });
 
   // ========================================
   // PUBLIC API ENDPOINTS (Master API Key Authentication)

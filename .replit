@@ -38,3 +38,8 @@ waitForPort = 5000
 [agent]
 integrations = ["javascript_database:1.0.0"]
 expertMode = true
+
+[userenv]
+
+[userenv.development]
+MASTER_API_KEY = "dev-test-key-xf2haigldnn"

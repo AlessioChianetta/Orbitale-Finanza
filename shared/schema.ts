@@ -218,6 +218,23 @@ export const publicApiCallLogs = pgTable("public_api_call_logs", {
 export type PublicApiCallLog = typeof publicApiCallLogs.$inferSelect;
 export type InsertPublicApiCallLog = typeof publicApiCallLogs.$inferInsert;
 
+// Single-use, short-lived SSO tokens for partner auto-login (server-to-server).
+// We store ONLY a SHA-256 hash of the token, never the token itself, so a leak
+// of this table cannot be used to log in. Tokens are consumed (consumedAt set)
+// on first valid use and rejected after expiry.
+export const ssoTokens = pgTable("sso_tokens", {
+  id: serial("id").primaryKey(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  email: varchar("email", { length: 255 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  consumedAt: timestamp("consumed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type SsoToken = typeof ssoTokens.$inferSelect;
+export type InsertSsoToken = typeof ssoTokens.$inferInsert;
+
 // Budget settings and preferences
 export const budgetSettings = pgTable("budget_settings", {
   id: serial("id").primaryKey(),

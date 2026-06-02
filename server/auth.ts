@@ -16,7 +16,7 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
@@ -83,7 +83,10 @@ export function setupAuth(app: Express) {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // HTTPS in production
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      // SameSite=None is REQUIRED so the session cookie is sent when the app runs
+      // inside the partner's cross-origin iframe (auto-login). None mandates Secure,
+      // which is true in production. In development we fall back to "lax".
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
     },
   };
@@ -215,7 +218,7 @@ export function setupAuth(app: Express) {
         // Cancellare esplicitamente i cookie di sessione con le opzioni corrette
         const cookieOptions = {
           path: '/',
-          sameSite: process.env.NODE_ENV === "production" ? "strict" as const : "lax" as const,
+          sameSite: process.env.NODE_ENV === "production" ? "none" as const : "lax" as const,
           secure: process.env.NODE_ENV === "production"
         };
         
@@ -371,4 +374,47 @@ export const requireMasterApiKey = async (req: any, res: any, next: any) => {
       message: "An error occurred during authentication"
     });
   }
+};
+
+// Constant-time string comparison to avoid leaking the API key via timing.
+function safeKeyEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
+// Server-to-server authentication using ONLY the shared X-API-Key.
+// Unlike requireMasterApiKey, this does NOT require X-User-Email and does NOT
+// require the user to already exist — it is used by the provisioning and SSO-link
+// endpoints. These endpoints must never be reachable from the browser: the API
+// key is a server secret that must not be exposed client-side.
+export const requireApiKeyOnly = (req: any, res: any, next: any) => {
+  const apiKey = req.headers['x-api-key']?.toString();
+
+  if (!apiKey) {
+    return res.status(401).json({
+      error: "Missing authentication header",
+      message: "X-API-Key header is required",
+    });
+  }
+
+  const masterApiKey = process.env.MASTER_API_KEY;
+  if (!masterApiKey) {
+    console.error("MASTER_API_KEY not configured in environment variables");
+    return res.status(500).json({
+      error: "Server configuration error",
+      message: "API authentication not properly configured",
+    });
+  }
+
+  if (!safeKeyEqual(apiKey, masterApiKey)) {
+    console.warn("Invalid API key attempt on server-to-server endpoint");
+    return res.status(401).json({
+      error: "Invalid API key",
+      message: "The provided API key is not valid",
+    });
+  }
+
+  next();
 };

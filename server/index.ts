@@ -23,11 +23,16 @@ app.use((req, res, next) => {
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
+  // Routes whose response bodies must never be written to logs because they
+  // contain auth/SSO token material (e.g. /sso?token=... login URLs).
+  const isSensitiveLogPath = (p: string) =>
+    p.startsWith("/api/public/auth/sso-link") || p.includes("/sso");
+
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      if (capturedJsonResponse && !isSensitiveLogPath(path)) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
