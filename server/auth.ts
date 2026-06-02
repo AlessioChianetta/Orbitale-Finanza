@@ -301,7 +301,7 @@ export const publicApiCallLogger = (req: any, _res: any, next: any) => {
     const ua = (req.headers['user-agent'] || '').toString().slice(0, 512) || null;
     const payload = {
       apiKeyFingerprint: fingerprintApiKey(req.headers['x-api-key']?.toString()),
-      userEmail: (req.headers['x-user-email']?.toString() || null)?.slice(0, 255) || null,
+      userEmail: maskEmail(req.headers['x-user-email']?.toString() || null),
       userId: req.user?.id ? Number(req.user.id) : null,
       method: req.method,
       path: req.originalUrl?.split('?')[0]?.slice(0, 512) || req.path,
@@ -346,7 +346,7 @@ export const requireMasterApiKey = async (req: any, res: any, next: any) => {
     }
 
     if (apiKey !== masterApiKey) {
-      console.warn(`Invalid API key attempt for email: ${userEmail}`);
+      console.warn(`Invalid API key attempt for email: ${maskEmail(userEmail?.toString())}`);
       return res.status(401).json({ 
         error: "Invalid API key",
         message: "The provided API key is not valid"
@@ -365,7 +365,7 @@ export const requireMasterApiKey = async (req: any, res: any, next: any) => {
     // Inject user into request (mimics session authentication)
     req.user = user;
     
-    console.log(`Public API access granted for user: ${user.email} (ID: ${user.id})`);
+    console.log(`Public API access granted for user: ${maskEmail(user.email)} (ID: ${user.id})`);
     next();
   } catch (error) {
     console.error("Error in requireMasterApiKey middleware:", error);
@@ -375,6 +375,15 @@ export const requireMasterApiKey = async (req: any, res: any, next: any) => {
     });
   }
 };
+
+// Mask an email so full addresses never appear in clear text in logs.
+// e.g. "mario.rossi@example.com" -> "m***@example.com"
+function maskEmail(email?: string | null): string | null {
+  if (!email) return null;
+  const at = email.indexOf("@");
+  if (at <= 0) return "***";
+  return `${email[0]}***${email.slice(at)}`.slice(0, 255);
+}
 
 // Constant-time string comparison to avoid leaking the API key via timing.
 function safeKeyEqual(a: string, b: string): boolean {
@@ -390,6 +399,18 @@ function safeKeyEqual(a: string, b: string): boolean {
 // endpoints. These endpoints must never be reachable from the browser: the API
 // key is a server secret that must not be exposed client-side.
 export const requireApiKeyOnly = (req: any, res: any, next: any) => {
+  // Strictly server-to-server: reject any request that carries browser auth
+  // context — an active passport session or a session cookie — so the shared
+  // API key can never be exercised from a logged-in browser.
+  const hasSessionCookie = /(^|;\s*)pc\.sid\./.test(req.headers.cookie || "");
+  const hasUserSession = typeof req.isAuthenticated === "function" && req.isAuthenticated();
+  if (hasSessionCookie || hasUserSession) {
+    return res.status(401).json({
+      error: "Browser context not allowed",
+      message: "This endpoint is server-to-server only",
+    });
+  }
+
   const apiKey = req.headers['x-api-key']?.toString();
 
   if (!apiKey) {
