@@ -1,0 +1,63 @@
+Oggetto: Due nuovi endpoint per provisioning utente + auto-login (SSO) da app partner
+
+Ciao, la nostra app già chiama le vostre API /api/public/* con header X-API-Key (chiave condivisa) + X-User-Email. Per abilitare l'auto-login dentro l'iframe ci servono due nuovi endpoint server-to-server, stessa autenticazione a chiave API. Non vanno mai esposti al browser.
+
+1) Provisioning utente (idempotente)
+Crea l'utente se non esiste; se esiste, non fa nulla e risponde comunque OK.
+
+POST /api/public/users/provision
+Headers:
+  X-API-Key: <chiave condivisa>
+  Content-Type: application/json
+Body:
+  {
+    "email": "giusydattilo@gmail.com",   // obbligatorio, normalizzare lowercase+trim
+    "firstName": "Giusy",                  // opzionale
+    "lastName": "Dattilo"                  // opzionale
+  }
+Risposta 200:
+  { "ok": true, "userId": "<id interno>", "email": "giusydattilo@gmail.com", "created": true }
+
+created: true se appena creato, false se esisteva già → mai errore su utente esistente.
+Utente creato senza password (accesso solo via SSO sotto) oppure con password casuale non comunicata.
+Errori: 401 chiave mancante/errata, 400 email assente/non valida.
+2) Link di accesso temporaneo (SSO / auto-login)
+Genera un token monouso a vita breve e restituisce l'URL da aprire.
+
+POST /api/public/auth/sso-link
+Headers:
+  X-API-Key: <chiave condivisa>
+  Content-Type: application/json
+Body:
+  { "email": "giusydattilo@gmail.com" }
+Risposta 200:
+  {
+    "ok": true,
+    "loginUrl": "https://orbitalefinanza.it/sso?token=<token-monouso>",
+    "expiresInSeconds": 90
+  }
+
+Errori: 401 chiave errata, 404 email inesistente (in pratica non accade: chiamiamo prima il provisioning).
+3) Comportamento della pagina /sso?token=... (aperta dentro un iframe del nostro sito)
+
+Valida il token: monouso (consumato al primo uso) e TTL breve (≈60–120s).
+Se valido: crea la sessione, setta il cookie e reindirizza alla dashboard finanza già loggata.
+Se non valido/scaduto: mostra il login normale.
+4) Requisiti di sicurezza (vincolanti)
+
+Chiave API solo server-to-server: questi due endpoint non devono mai accettare token utente o chiamate dal browser.
+Token SSO: monouso, TTL ≤ 120s, legato all'email, random/firmato non indovinabile, invalidato dopo il primo consumo.
+Niente log in chiaro di token, chiave API o email complete.
+Rate-limit su entrambi gli endpoint.
+5) Punto critico per l'auto-login dentro l'iframe ⚠️
+La pagina gira in un iframe cross-dominio (nostro dominio ≠ orbitalefinanza.it), quindi il cookie di sessione deve essere:
+
+Set-Cookie: session=...; SameSite=None; Secure; HttpOnly
+
+Senza SameSite=None; Secure il browser non manda il cookie dentro l'iframe e l'auto-login fallisce.
+
+Inoltre i browser che bloccano i cookie di terze parti (Safari, e Chrome in arrivo) possono comunque rifiutarlo in iframe. Mitigazioni consigliate dal vostro lato:
+
+stabilire la sessione tramite il token nell'URL al momento della navigazione (così è una richiesta "first-party" durante il redirect), oppure
+usare la Storage Access API, oppure
+accettare che in quei browser "Apri in nuova tab" funzioni sempre, mentre l'iframe può richiedere un click di conferma.
