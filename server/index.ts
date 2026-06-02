@@ -24,9 +24,10 @@ app.use((req, res, next) => {
   };
 
   // Routes whose response bodies must never be written to logs because they
-  // contain auth/SSO token material (e.g. /sso?token=... login URLs).
+  // carry sensitive material: SSO token URLs and user PII such as emails
+  // (all partner server-to-server endpoints under /api/public/, plus /sso).
   const isSensitiveLogPath = (p: string) =>
-    p.startsWith("/api/public/auth/sso-link") || p.includes("/sso");
+    p.startsWith("/api/public/") || p.includes("/sso");
 
   res.on("finish", () => {
     const duration = Date.now() - start;

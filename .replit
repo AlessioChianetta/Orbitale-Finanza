@@ -42,4 +42,3 @@ expertMode = true
 [userenv]
 
 [userenv.development]
-MASTER_API_KEY = "dev-test-key-xf2haigldnn"
